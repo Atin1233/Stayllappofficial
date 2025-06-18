@@ -130,18 +130,31 @@ export class UserRepository {
    * Verify user credentials
    */
   async verifyUserCredentials(email: string, password: string): Promise<User | null> {
-    const user = await this.getUserByEmail(email);
-    
-    if (!user || !user.isActive) {
-      return null;
-    }
+    try {
+      console.log('Verifying credentials for email:', email);
+      
+      const user = await this.getUserByEmail(email);
+      console.log('User found:', user ? 'Yes' : 'No');
+      
+      if (!user || !user.isActive) {
+        console.log('User not found or not active');
+        return null;
+      }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return null;
-    }
+      console.log('Comparing passwords...');
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log('Password valid:', isPasswordValid);
+      
+      if (!isPasswordValid) {
+        return null;
+      }
 
-    return user;
+      console.log('Credentials verified successfully');
+      return user;
+    } catch (error) {
+      console.error('Error in verifyUserCredentials:', error);
+      throw error;
+    }
   }
 
   /**

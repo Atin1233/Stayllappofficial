@@ -1,30 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropertyForm from './PropertyForm';
 import ListingsDisplay from './ListingsDisplay';
+import Profile from './Profile';
+import PropertyManagement from './PropertyManagement';
+import Analytics from './Analytics';
 
-interface DashboardProps {
-  onLogout: () => void;
-}
+const Dashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'properties' | 'listings' | 'manage' | 'profile' | 'analytics'>('properties');
+  const [refreshListings, setRefreshListings] = useState(false);
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const [showPropertyForm, setShowPropertyForm] = useState(false);
-  const [showListings, setShowListings] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const handlePropertyCreated = () => {
+    setRefreshListings(prev => !prev);
+    setActiveTab('listings');
+  };
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.reload();
+  };
 
-  if (showPropertyForm) {
-    return <PropertyForm onBack={() => setShowPropertyForm(false)} />;
-  }
-
-  if (showListings) {
-    return <ListingsDisplay onBack={() => setShowListings(false)} />;
-  }
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -33,13 +29,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Stayll</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Stayll Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Welcome, {user?.firstName || 'User'}!</span>
+              <div className="text-sm text-gray-700">
+                Welcome, {user.firstName} {user.lastName}
+              </div>
               <button
-                onClick={onLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                onClick={handleLogout}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 Logout
               </button>
@@ -48,33 +46,81 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Dashboard</h2>
-              <p className="text-gray-600 mb-8">
-                Welcome to your property management dashboard. Here you can manage your properties and listings.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                  onClick={() => setShowPropertyForm(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-sm font-medium"
-                >
-                  Add New Property
-                </button>
-                <button
-                  onClick={() => setShowListings(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md text-sm font-medium"
-                >
-                  View Listings
-                </button>
-              </div>
-            </div>
+      {/* Navigation */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('properties')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'properties'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Add Property
+            </button>
+            <button
+              onClick={() => setActiveTab('manage')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'manage'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Manage Properties
+            </button>
+            <button
+              onClick={() => setActiveTab('listings')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'listings'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              View Listings
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'analytics'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'profile'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Profile
+            </button>
           </div>
         </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {activeTab === 'properties' && (
+          <PropertyForm onPropertyCreated={handlePropertyCreated} />
+        )}
+        {activeTab === 'manage' && (
+          <PropertyManagement />
+        )}
+        {activeTab === 'listings' && (
+          <ListingsDisplay key={refreshListings ? 'refresh' : 'normal'} />
+        )}
+        {activeTab === 'analytics' && (
+          <Analytics />
+        )}
+        {activeTab === 'profile' && (
+          <Profile />
+        )}
       </main>
     </div>
   );

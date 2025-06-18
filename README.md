@@ -1,194 +1,203 @@
-# Stayll - AI-Powered Property Management System
+# Stayll - Property Management Platform
 
-Stayll is a comprehensive property management platform that combines a robust backend API with an intuitive frontend dashboard for landlords and property managers.
+Stayll is a comprehensive property management platform designed for landlords and property managers to efficiently manage their rental properties, generate listings, and track analytics.
 
 ## 🚀 Features
 
-### Backend (Phase 1-3 Complete)
-- **AI-Powered Listing Generation**: Automatically creates compelling property listings using Hugging Face API
-- **Property Management**: Full CRUD operations for properties with detailed information
-- **User Authentication**: JWT-based authentication with user registration and login
-- **Database Integration**: SQLite database with Prisma ORM for data persistence
-- **RESTful API**: Clean, well-documented API endpoints
+### Authentication & User Management
+- **Secure Login/Registration**: JWT-based authentication with bcrypt password hashing
+- **User Profiles**: View and edit personal information, contact details, and company information
+- **User Types**: Support for landlords, property managers, and admin users
+- **Session Management**: Automatic token refresh and secure logout
 
-### Frontend (Phase 4 Complete)
-- **User Authentication UI**: Beautiful login and registration forms
-- **Property Creation Form**: Comprehensive form for adding new properties
-- **Listings Dashboard**: View and manage AI-generated listings
-- **Copy/Paste Functionality**: One-click copying of listings to clipboard
-- **Responsive Design**: Works seamlessly on desktop and mobile
+### Property Management
+- **Add Properties**: Comprehensive property form with detailed information
+  - Property details (title, type, address, bedrooms, bathrooms)
+  - Financial information (rent, utilities, pet policies)
+  - Amenities and features
+  - Photo URLs and availability dates
+- **Manage Properties**: View, edit, and delete existing properties
+- **Property Types**: Support for apartments, houses, condos, townhouses, and studios
 
-## 🛠️ Tech Stack
+### Listing Generation
+- **AI-Powered Listings**: Automatic generation of professional rental listings
+- **Template-Based System**: Consistent, high-quality listing descriptions
+- **Property Integration**: Seamless connection between properties and listings
+- **Listing Management**: View and manage all generated listings
+
+### Analytics Dashboard
+- **Key Metrics**: Total properties, listings, average rent, and recent activity
+- **Property Distribution**: Breakdown by property type
+- **Revenue Overview**: Total monthly revenue and financial insights
+- **Recent Activity**: Latest property additions and updates
+- **Visual Charts**: Clean, modern dashboard with intuitive metrics
+
+### User Interface
+- **Modern Design**: Clean, responsive interface built with React and Tailwind CSS
+- **Tabbed Navigation**: Easy switching between different features
+- **Real-time Updates**: Instant feedback and data synchronization
+- **Mobile Responsive**: Works seamlessly on all device sizes
+
+## 🛠️ Technology Stack
 
 ### Backend
-- **Node.js** with **TypeScript**
-- **Express.js** for API framework
+- **Node.js** with **Express.js** framework
+- **TypeScript** for type safety and better development experience
 - **Prisma ORM** with **SQLite** database
 - **JWT** for authentication
-- **Zod** for validation
 - **bcrypt** for password hashing
+- **Zod** for data validation
 
 ### Frontend
 - **React 18** with **TypeScript**
-- **Vite** for build tooling
 - **Tailwind CSS** for styling
 - **Axios** for API communication
+- **Vite** for fast development and building
+
+### Database
+- **SQLite** for data persistence
+- **Prisma Migrations** for database schema management
+- **Automatic seeding** for development data
 
 ## 📦 Installation & Setup
 
 ### Prerequisites
-- Node.js (v18 or higher)
+- Node.js (v16 or higher)
 - npm or yarn
 
-### Quick Start
-
-1. **Clone and install all dependencies:**
+### Backend Setup
 ```bash
-git clone <repository-url>
-cd Stayll
-npm run install:all
-```
+# Install dependencies
+npm install
 
-2. **Set up environment variables:**
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+# Set up environment variables
+echo 'DATABASE_URL="file:./prisma/dev.db"' > .env
+echo 'JWT_SECRET="your-very-secret-key"' >> .env
 
-3. **Initialize the database:**
-```bash
-npx prisma migrate dev
+# Generate Prisma client
 npx prisma generate
+
+# Run database migrations
+npx prisma migrate dev
+
+# Seed the database with test data
+npm run db:seed
+
+# Start the development server
+npm run dev
 ```
 
-4. **Start both backend and frontend:**
+### Frontend Setup
 ```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+### Full Stack Development
+```bash
+# From the root directory, start both backend and frontend
 npm run dev:full
 ```
 
-### Manual Setup
+## 🔧 Available Scripts
 
-#### Backend Only
-```bash
-npm install
-npx prisma migrate dev
-npx prisma generate
-npm run dev
-```
+### Backend Scripts
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run db:generate` - Generate Prisma client
+- `npm run db:migrate` - Run database migrations
+- `npm run db:seed` - Seed database with test data
+- `npm run db:studio` - Open Prisma Studio
 
-#### Frontend Only
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Frontend Scripts
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
 
-## 🌐 API Endpoints
+## 🗄️ Database Schema
+
+### Users
+- Authentication information (email, password)
+- Personal details (name, phone, company)
+- User type and status
+- Timestamps for creation and updates
+
+### Properties
+- Property details (title, address, type)
+- Specifications (bedrooms, bathrooms, square footage)
+- Financial information (rent, utilities)
+- Features and amenities
+- Photo URLs and availability
+
+### Listings
+- Generated listing text
+- Property associations
+- User ownership
+- Creation and update timestamps
+
+## 🔐 API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - User registration
+- `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
 - `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update user profile
 
 ### Properties
-- `GET /api/properties` - Get all properties (authenticated)
-- `POST /api/properties` - Create new property (authenticated)
+- `GET /api/properties` - Get all properties
 - `GET /api/properties/:id` - Get property by ID
+- `POST /api/properties` - Create new property
 - `PUT /api/properties/:id` - Update property
 - `DELETE /api/properties/:id` - Delete property
 
 ### Listings
-- `GET /api/listings` - Get all listings (authenticated)
-- `POST /api/listings/generate/:propertyId` - Generate AI listing for property
+- `GET /api/listings` - Get all listings
 - `GET /api/listings/:id` - Get listing by ID
+- `POST /api/listings` - Create new listing
+- `POST /api/listings/generate-listing` - Generate listing for property
 - `DELETE /api/listings/:id` - Delete listing
 
-## 🎯 Usage
+## 🧪 Testing
 
-### For Landlords
-1. **Register/Login** to your Stayll account
-2. **Add Properties** using the comprehensive property form
-3. **Generate Listings** automatically when properties are created
-4. **Copy Listings** with one click for use on rental platforms
-5. **Manage Properties** and listings from the dashboard
+### Test User Credentials
+- **Email**: test@example.com
+- **Password**: password123
 
-### API Integration
-The backend provides a RESTful API that can be integrated with:
-- Property management software
-- Rental listing platforms
-- CRM systems
-- Custom applications
-
-## 🔧 Development
-
-### Backend Development
+### API Testing
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npx prisma studio    # Open Prisma Studio for database management
-```
+# Test login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123"}'
 
-### Frontend Development
-```bash
-cd frontend
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-```
-
-### Database Management
-```bash
-npx prisma migrate dev    # Create and apply migrations
-npx prisma generate       # Generate Prisma client
-npx prisma studio         # Open database GUI
-```
-
-## 📁 Project Structure
-
-```
-Stayll/
-├── src/                    # Backend source code
-│   ├── controllers/        # API controllers
-│   ├── middleware/         # Express middleware
-│   ├── models/            # Data models and validation
-│   ├── repositories/      # Database operations
-│   ├── routes/            # API routes
-│   └── services/          # Business logic
-├── frontend/              # React frontend
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   └── services/      # API service layer
-│   └── public/            # Static assets
-├── prisma/                # Database schema and migrations
-└── package.json           # Backend dependencies
-```
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-# Database
-DATABASE_URL="file:./dev.db"
-
-# JWT
-JWT_SECRET="your-secret-key-change-in-production"
-
-# Hugging Face API (for AI listing generation)
-HUGGING_FACE_API_KEY="your-hugging-face-api-key"
+# Test health check
+curl http://localhost:3001/health
 ```
 
 ## 🚀 Deployment
 
-### Backend Deployment
-1. Build the TypeScript code: `npm run build`
-2. Set up production environment variables
-3. Deploy to your preferred hosting platform (Heroku, Vercel, etc.)
+### Environment Variables
+- `DATABASE_URL` - Database connection string
+- `JWT_SECRET` - Secret key for JWT tokens
+- `PORT` - Server port (default: 3001)
 
-### Frontend Deployment
-1. Build the React app: `cd frontend && npm run build`
-2. Deploy the `dist` folder to your hosting platform
+### Production Build
+```bash
+# Backend
+npm run build
+npm start
+
+# Frontend
+cd frontend
+npm run build
+```
 
 ## 🤝 Contributing
 
@@ -198,10 +207,14 @@ HUGGING_FACE_API_KEY="your-hugging-face-api-key"
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the ISC License.
+This project is licensed under the MIT License.
 
 ## 🆘 Support
 
-For support and questions, please open an issue in the repository or contact the development team. 
+For support and questions, please open an issue in the GitHub repository.
+
+---
+
+**Stayll** - Making property management simple and efficient. 

@@ -64,18 +64,24 @@ export async function register(req: Request, res: Response): Promise<void> {
  */
 export async function login(req: Request, res: Response): Promise<void> {
   try {
+    console.log('Login attempt for email:', req.body.email);
+    
     // 1. Validate the request body
     const loginData: UserLogin = UserValidator.validateLogin(req.body);
+    console.log('Login validation passed');
 
     // 2. Verify user credentials
     const user = await userRepository.verifyUserCredentials(loginData.email, loginData.password);
     if (!user) {
+      console.log('Login failed: Invalid credentials for email:', loginData.email);
       res.status(401).json({
         success: false,
         error: 'Invalid email or password'
       });
       return;
     }
+
+    console.log('Login successful for user:', user.email);
 
     // 3. Generate JWT token
     const tokenPayload: JWTPayload = {
@@ -99,6 +105,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     });
   } catch (error: any) {
     console.error('Login error:', error);
+    console.error('Error stack:', error.stack);
     
     res.status(400).json({
       success: false,

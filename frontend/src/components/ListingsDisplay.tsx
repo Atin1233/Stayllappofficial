@@ -1,34 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { listingAPI } from '../services/api';
 
-interface ListingsDisplayProps {
-  onBack: () => void;
-}
-
 interface Listing {
   id: string;
-  title: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  propertyType: string;
-  bedrooms: number;
-  bathrooms: number;
-  rent: number;
-  status: string;
+  listingText: string;
   createdAt: string;
+  updatedAt: string;
+  property: {
+    id: string;
+    title: string;
+    address: string;
+    city: string;
+    state: string;
+    rent: number;
+    numberOfBedrooms: number;
+    numberOfBathrooms: number;
+  };
 }
 
-const ListingsDisplay: React.FC<ListingsDisplayProps> = ({ onBack }) => {
+const ListingsDisplay: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({
-    status: '',
-    city: '',
-    propertyType: '',
-  });
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchListings();
@@ -36,223 +30,175 @@ const ListingsDisplay: React.FC<ListingsDisplayProps> = ({ onBack }) => {
 
   const fetchListings = async () => {
     try {
+      setLoading(true);
+      console.log('Fetching listings...');
       const response = await listingAPI.getAll();
-      setListings(response.data);
+      console.log('Listings response:', response.data);
+      setListings(response.data.listings || []);
     } catch (err: any) {
-      setError('Failed to fetch listings');
       console.error('Error fetching listings:', err);
+      setError(err.response?.data?.error || 'Failed to fetch listings');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this listing?')) {
-      try {
-        await listingAPI.delete(id);
-        setListings(listings.filter(listing => listing.id !== id));
-      } catch (err: any) {
-        setError('Failed to delete listing');
-        console.error('Error deleting listing:', err);
-      }
+  const copyToClipboard = async (text: string, listingId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(listingId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopiedId(listingId);
+      setTimeout(() => setCopiedId(null), 2000);
     }
   };
 
-  const filteredListings = listings.filter(listing => {
-    return (
-      (filters.status === '' || listing.status === filters.status) &&
-      (filters.city === '' || listing.city.toLowerCase().includes(filters.city.toLowerCase())) &&
-      (filters.propertyType === '' || listing.propertyType === filters.propertyType)
-    );
-  });
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading listings...</p>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (listings.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No listings yet</h3>
+          <p className="text-gray-500">Create your first property to generate a listing.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Stayll</h1>
-            </div>
-            <button
-              onClick={onBack}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Your Listings</h2>
+        <p className="text-gray-600 mt-1">Manage and copy your AI-generated property listings</p>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Property Listings</h2>
-              <p className="text-gray-600 mt-1">Manage your property listings</p>
-            </div>
-
-            {error && (
-              <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-
-            {/* Filters */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex flex-wrap gap-4">
+      <div className="space-y-6">
+        {listings.map((listing) => (
+          <div key={listing.id} className="bg-white shadow rounded-lg p-6">
+            {/* Property Info Header */}
+            <div className="border-b border-gray-200 pb-4 mb-4">
+              <div className="flex justify-between items-start">
                 <div>
-                  <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    id="status-filter"
-                    value={filters.status}
-                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="pending">Pending</option>
-                  </select>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {listing.property ? listing.property.title : <span className="text-red-500">[No property data]</span>}
+                  </h3>
+                  <p className="text-gray-600">
+                    {listing.property ? `${listing.property.address}, ${listing.property.city}, ${listing.property.state}` : <span className="text-red-500">[No address]</span>}
+                  </p>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                    <span>{listing.property ? `${listing.property.numberOfBedrooms} bed` : ''}</span>
+                    <span>{listing.property ? `${listing.property.numberOfBathrooms} bath` : ''}</span>
+                    <span>{listing.property ? `$${listing.property.rent}/month` : ''}</span>
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="city-filter" className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    id="city-filter"
-                    placeholder="Filter by city"
-                    value={filters.city}
-                    onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="type-filter" className="block text-sm font-medium text-gray-700">
-                    Property Type
-                  </label>
-                  <select
-                    id="type-filter"
-                    value={filters.propertyType}
-                    onChange={(e) => setFilters({ ...filters, propertyType: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">All Types</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="house">House</option>
-                    <option value="condo">Condo</option>
-                    <option value="townhouse">Townhouse</option>
-                  </select>
+                <div className="text-right text-sm text-gray-500">
+                  <div>Created: {formatDate(listing.createdAt)}</div>
+                  <div>Updated: {formatDate(listing.updatedAt)}</div>
                 </div>
               </div>
             </div>
 
-            {/* Listings Table */}
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Property
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rent
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredListings.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                        No listings found
-                      </td>
-                    </tr>
+            {/* Listing Text */}
+            <div className="mb-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+                  {listing.listingText}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-between items-center">
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => copyToClipboard(listing.listingText, listing.id)}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
+                    copiedId === listing.id
+                      ? 'bg-green-600 text-white'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                >
+                  {copiedId === listing.id ? (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Copied!
+                    </>
                   ) : (
-                    filteredListings.map((listing) => (
-                      <tr key={listing.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{listing.title}</div>
-                            <div className="text-sm text-gray-500">{listing.propertyType}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{listing.city}, {listing.state}</div>
-                          <div className="text-sm text-gray-500">{listing.address}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {listing.bedrooms} bed, {listing.bathrooms} bath
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            ${listing.rent.toLocaleString()}/month
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            listing.status === 'active' 
-                              ? 'bg-green-100 text-green-800' 
-                              : listing.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {listing.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleDelete(listing.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copy Listing
+                    </>
                   )}
-                </tbody>
-              </table>
-            </div>
+                </button>
 
-            {/* Summary */}
-            <div className="px-6 py-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                Showing {filteredListings.length} of {listings.length} listings
-              </p>
+                <button
+                  onClick={() => copyToClipboard(listing.property ? listing.property.title : '', `${listing.id}-title`)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  disabled={!listing.property}
+                >
+                  Copy Title
+                </button>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                ID: {listing.id}
+              </div>
             </div>
           </div>
+        ))}
+      </div>
+
+      {/* Summary */}
+      <div className="mt-8 bg-gray-50 rounded-lg p-4">
+        <div className="text-center">
+          <p className="text-gray-600">
+            Total Listings: <span className="font-semibold text-gray-900">{listings.length}</span>
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
+            Click "Copy Listing" to copy the full listing text to your clipboard
+          </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
