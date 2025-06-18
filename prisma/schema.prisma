@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  companyName String?
+  userType    UserType @default(LANDLORD)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  properties Property[]
+  listings   Listing[]
+
+  @@map("users")
+}
+
+model Property {
+  id                String   @id @default(cuid())
+  title             String
+  address           String
+  city              String
+  state             String
+  zip               String
+  numberOfBedrooms  Int
+  numberOfBathrooms Int
+  squareFootage     Int?
+  rent              Float
+  description       String
+  amenities         String // JSON string for SQLite compatibility
+  availabilityDate  DateTime
+  photos            String // JSON string for SQLite compatibility
+  propertyType      PropertyType @default(APARTMENT)
+  petFriendly       Boolean  @default(false)
+  utilitiesIncluded Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listings  Listing[]
+
+  @@map("properties")
+}
+
+model Listing {
+  id           String   @id @default(cuid())
+  listingText  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  propertyId   String
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("listings")
+}
+
+enum UserType {
+  LANDLORD
+  PROPERTY_MANAGER
+  ADMIN
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  CONDO
+  TOWNHOUSE
+  STUDIO
+}

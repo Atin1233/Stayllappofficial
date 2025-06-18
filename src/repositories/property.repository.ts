@@ -1,0 +1,261 @@
+import { PrismaClient } from '@prisma/client';
+import { PropertyCreate, PropertyUpdate, Property } from '../models/Property';
+
+/**
+ * Property Repository for database operations
+ * 
+ * This repository handles all property-related database operations,
+ * replacing the in-memory storage with persistent database storage.
+ */
+
+const prisma = new PrismaClient();
+
+export class PropertyRepository {
+  /**
+   * Create a new property
+   */
+  async createProperty(propertyData: PropertyCreate, userId: string): Promise<Property> {
+    // Ensure required fields are present
+    if (!propertyData.title || !propertyData.address || !propertyData.city || 
+        !propertyData.state || !propertyData.zip || !propertyData.rent) {
+      throw new Error('Missing required fields');
+    }
+
+    // Create property in database
+    const newProperty = await prisma.property.create({
+      data: {
+        title: propertyData.title,
+        address: propertyData.address,
+        city: propertyData.city,
+        state: propertyData.state,
+        zip: propertyData.zip,
+        numberOfBedrooms: propertyData.numberOfBedrooms,
+        numberOfBathrooms: propertyData.numberOfBathrooms,
+        squareFootage: propertyData.squareFootage || null,
+        rent: propertyData.rent,
+        description: propertyData.description,
+        amenities: JSON.stringify(propertyData.amenities), // Convert array to JSON string
+        availabilityDate: propertyData.availabilityDate,
+        photos: JSON.stringify(propertyData.photos), // Convert array to JSON string
+        propertyType: propertyData.propertyType?.toUpperCase() as any || 'APARTMENT',
+        petFriendly: propertyData.petFriendly || false,
+        utilitiesIncluded: propertyData.utilitiesIncluded || false,
+        userId: userId
+      }
+    });
+
+    return this.convertPrismaPropertyToProperty(newProperty);
+  }
+
+  /**
+   * Get property by ID
+   */
+  async getPropertyById(id: string): Promise<Property | null> {
+    const property = await prisma.property.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            userType: true
+          }
+        }
+      }
+    });
+
+    return property ? this.convertPrismaPropertyToProperty(property) : null;
+  }
+
+  /**
+   * Get all properties
+   */
+  async getAllProperties(): Promise<Property[]> {
+    const properties = await prisma.property.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            userType: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+  }
+
+  /**
+   * Get properties by user ID
+   */
+  async getPropertiesByUserId(userId: string): Promise<Property[]> {
+    const properties = await prisma.property.findMany({
+      where: { userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            userType: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+  }
+
+  /**
+   * Update property by ID
+   */
+  async updatePropertyById(id: string, updateData: PropertyUpdate, userId: string): Promise<Property | null> {
+    try {
+      const updatedProperty = await prisma.property.update({
+        where: { 
+          id,
+          userId // Ensure user owns the property
+        },
+        data: {
+          title: updateData.title,
+          address: updateData.address,
+          city: updateData.city,
+          state: updateData.state,
+          zip: updateData.zip,
+          numberOfBedrooms: updateData.numberOfBedrooms,
+          numberOfBathrooms: updateData.numberOfBathrooms,
+          squareFootage: updateData.squareFootage || null,
+          rent: updateData.rent,
+          description: updateData.description,
+          amenities: updateData.amenities ? JSON.stringify(updateData.amenities) : undefined,
+          availabilityDate: updateData.availabilityDate,
+          photos: updateData.photos ? JSON.stringify(updateData.photos) : undefined,
+          propertyType: updateData.propertyType?.toUpperCase() as any,
+          petFriendly: updateData.petFriendly,
+          utilitiesIncluded: updateData.utilitiesIncluded
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              userType: true
+            }
+          }
+        }
+      });
+
+      return this.convertPrismaPropertyToProperty(updatedProperty);
+    } catch (error) {
+      // Property not found or user doesn't own it
+      return null;
+    }
+  }
+
+  /**
+   * Delete property by ID
+   */
+  async deletePropertyById(id: string, userId: string): Promise<boolean> {
+    try {
+      await prisma.property.delete({
+        where: { 
+          id,
+          userId // Ensure user owns the property
+        }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Search properties
+   */
+  async searchProperties(filters: {
+    city?: string;
+    state?: string;
+    minRent?: number;
+    maxRent?: number;
+    bedrooms?: number;
+    propertyType?: string;
+    petFriendly?: boolean;
+  }): Promise<Property[]> {
+    const whereClause: any = {};
+
+    if (filters.city) whereClause.city = { contains: filters.city };
+    if (filters.state) whereClause.state = { contains: filters.state };
+    if (filters.minRent || filters.maxRent) {
+      whereClause.rent = {};
+      if (filters.minRent) whereClause.rent.gte = filters.minRent;
+      if (filters.maxRent) whereClause.rent.lte = filters.maxRent;
+    }
+    if (filters.bedrooms) whereClause.numberOfBedrooms = filters.bedrooms;
+    if (filters.propertyType) whereClause.propertyType = filters.propertyType.toUpperCase();
+    if (filters.petFriendly !== undefined) whereClause.petFriendly = filters.petFriendly;
+
+    const properties = await prisma.property.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            userType: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+  }
+
+  /**
+   * Get properties count by user
+   */
+  async getPropertiesCountByUser(userId: string): Promise<number> {
+    return await prisma.property.count({
+      where: { userId }
+    });
+  }
+
+  /**
+   * Convert Prisma property to our Property interface
+   */
+  private convertPrismaPropertyToProperty(prismaProperty: any): Property {
+    return {
+      title: prismaProperty.title,
+      address: prismaProperty.address,
+      city: prismaProperty.city,
+      state: prismaProperty.state,
+      zip: prismaProperty.zip,
+      numberOfBedrooms: prismaProperty.numberOfBedrooms,
+      numberOfBathrooms: prismaProperty.numberOfBathrooms,
+      squareFootage: prismaProperty.squareFootage || undefined,
+      rent: prismaProperty.rent,
+      description: prismaProperty.description,
+      amenities: JSON.parse(prismaProperty.amenities || '[]'), // Parse JSON string back to array
+      availabilityDate: prismaProperty.availabilityDate,
+      photos: JSON.parse(prismaProperty.photos || '[]'), // Parse JSON string back to array
+      propertyType: prismaProperty.propertyType.toLowerCase() as any,
+      petFriendly: prismaProperty.petFriendly,
+      utilitiesIncluded: prismaProperty.utilitiesIncluded,
+      createdAt: prismaProperty.createdAt,
+      updatedAt: prismaProperty.updatedAt,
+      isActive: true // Default to true for existing properties
+    };
+  }
+} 
