@@ -1,127 +1,51 @@
-import React, { useState } from 'react';
-import PropertyForm from './PropertyForm';
-import ListingsDisplay from './ListingsDisplay';
-import Profile from './Profile';
-import PropertyManagement from './PropertyManagement';
-import Analytics from './Analytics';
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'properties' | 'listings' | 'manage' | 'profile' | 'analytics'>('properties');
-  const [refreshListings, setRefreshListings] = useState(false);
-
-  const handlePropertyCreated = () => {
-    setRefreshListings(prev => !prev);
-    setActiveTab('listings');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.reload();
-  };
-
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+  const stats = [
+    { value: '12', label: 'Active Properties' },
+    { value: '8', label: 'Active Listings' },
+    { value: '5', label: 'New Inquiries' },
+    { value: '$1,250', label: 'Avg. Rent' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="p-8">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Stayll Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-700">
-                Welcome, {user.firstName} {user.lastName}
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <div className="mb-12">
+        <h1 className="text-5xl font-bold">Stayll</h1>
+        <h2 className="text-3xl font-light text-gray-300 mt-1">Welcome back, {user.firstName}!</h2>
+        <p className="text-lg text-gray-400 mt-4 max-w-2xl">Here's a quick overview of your properties and listings.</p>
+        <div className="mt-6 border-b border-gray-700 w-full max-w-xs" />
+      </div>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('properties')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'properties'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Add Property
-            </button>
-            <button
-              onClick={() => setActiveTab('manage')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'manage'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Manage Properties
-            </button>
-            <button
-              onClick={() => setActiveTab('listings')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'listings'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              View Listings
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'analytics'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Analytics
-            </button>
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'profile'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Profile
-            </button>
-          </div>
+      {/* Quick Actions */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6">Quick Actions</h2>
+        <div className="flex items-center space-x-6">
+          <Link to="/add-property" className="text-blue-400 hover:text-blue-300 text-xl transition-colors">
+            + Add New Property
+          </Link>
+          <Link to="/properties" className="text-blue-400 hover:text-blue-300 text-xl transition-colors">
+            Manage Properties
+          </Link>
         </div>
-      </nav>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {activeTab === 'properties' && (
-          <PropertyForm onPropertyCreated={handlePropertyCreated} />
-        )}
-        {activeTab === 'manage' && (
-          <PropertyManagement />
-        )}
-        {activeTab === 'listings' && (
-          <ListingsDisplay key={refreshListings ? 'refresh' : 'normal'} />
-        )}
-        {activeTab === 'analytics' && (
-          <Analytics />
-        )}
-        {activeTab === 'profile' && (
-          <Profile />
-        )}
-      </main>
+      {/* At a Glance */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-6">At a Glance</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {stats.map((stat) => (
+            <div key={stat.label}>
+              <p className="text-5xl font-bold text-blue-400">{stat.value}</p>
+              <p className="text-gray-400 mt-2">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

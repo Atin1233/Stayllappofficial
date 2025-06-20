@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 interface UserProfile {
   id: string;
@@ -14,7 +15,11 @@ interface UserProfile {
   updatedAt: string;
 }
 
-const Profile: React.FC = () => {
+interface ProfileProps {
+  onLogout: () => void;
+}
+
+const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -62,6 +67,7 @@ const Profile: React.FC = () => {
       setProfile(response.data.user);
       setIsEditing(false);
       setSuccess('Profile updated successfully!');
+      toast.success('Profile updated successfully');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update profile');
     } finally {
@@ -75,6 +81,11 @@ const Profile: React.FC = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleLogoutClick = () => {
+    onLogout();
+    toast.success('Logged out successfully');
   };
 
   if (loading) {
@@ -244,6 +255,15 @@ const Profile: React.FC = () => {
             </div>
           </div>
         )}
+
+        <div className="flex justify-end space-x-3 mt-6">
+          <button
+            onClick={handleLogoutClick}
+            className="w-full mt-2 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
