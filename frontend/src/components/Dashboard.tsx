@@ -1,15 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { analyticsAPI } from '../services/api';
+
+interface DashboardStats {
+  activeProperties: number;
+  activeListings: number;
+  newInquiries: number;
+  averageRent: number;
+}
 
 const Dashboard: React.FC = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const stats = [
-    { value: '12', label: 'Active Properties' },
-    { value: '8', label: 'Active Listings' },
-    { value: '5', label: 'New Inquiries' },
-    { value: '$1,250', label: 'Avg. Rent' },
-  ];
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const response = await analyticsAPI.getDashboardSummary();
+        if (response.data.success) {
+          setStats(response.data.summary);
+        } else {
+          setError('Failed to fetch dashboard summary.');
+        }
+      } catch (err) {
+        setError('An error occurred while fetching the summary.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, []);
+
+  const formattedStats = stats ? [
+    { value: stats.activeProperties, label: 'Active Properties' },
+    { value: stats.activeListings, label: 'Active Listings' },
+    { value: stats.newInquiries, label: 'New Inquiries' },
+    { value: `$${Math.round(stats.averageRent).toLocaleString()}`, label: 'Avg. Rent' },
+  ] : [];
 
   return (
     <div className="p-8">
@@ -37,14 +68,24 @@ const Dashboard: React.FC = () => {
       {/* At a Glance */}
       <div>
         <h2 className="text-2xl font-semibold mb-6">At a Glance</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat) => (
-            <div key={stat.label}>
-              <p className="text-5xl font-bold text-blue-400">{stat.value}</p>
-              <p className="text-gray-400 mt-2">{stat.label}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-24">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+          </div>
+        ) : error ? (
+          <div className="text-red-500 bg-red-100 border border-red-400 p-4 rounded-lg">
+            {error}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {formattedStats.map((stat) => (
+              <div key={stat.label}>
+                <p className="text-5xl font-bold text-blue-400">{stat.value}</p>
+                <p className="text-gray-400 mt-2">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

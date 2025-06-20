@@ -72,7 +72,14 @@ const useListingAnalytics = (listingId: string) => {
   return ref; // Return the ref to be attached to the component
 };
 
-const ListingCard: React.FC<{ listing: Listing; onInquiry: (id: string) => void; onFavorite: (id: string) => void; onCopy: (text: string, id: string) => void; copiedId: string | null; }> = ({ listing, onInquiry, onFavorite, onCopy, copiedId }) => {
+const ListingCard: React.FC<{ 
+  listing: Listing; 
+  onInquiry: (id: string) => void; 
+  onFavorite: (id: string) => void; 
+  onCopy: (text: string, id: string) => void; 
+  onDelete: (id: string) => void;
+  copiedId: string | null; 
+}> = ({ listing, onInquiry, onFavorite, onCopy, onDelete, copiedId }) => {
   const analyticsRef = useListingAnalytics(listing.id);
 
   const formatDate = (dateString: string) => {
@@ -145,8 +152,16 @@ const ListingCard: React.FC<{ listing: Listing; onInquiry: (id: string) => void;
           </button>
         </div>
 
-        <div className="text-sm text-gray-500">
-          ID: {listing.id}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => onDelete(listing.id)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Delete
+          </button>
+          <div className="text-sm text-gray-500">
+            ID: {listing.id}
+          </div>
         </div>
       </div>
     </div>
@@ -159,31 +174,21 @@ const ListingsDisplay: React.FC = () => {
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchListings = async () => {
-      try {
-        setLoading(true);
-        const response = await listingAPI.getAll();
-        if (isMounted) {
-          setListings(response.data.listings || []);
-          setLoading(false);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.response?.data?.error || 'Failed to fetch listings');
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchListings();
-
-    return () => {
-      isMounted = false;
-    };
+  const fetchListings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await listingAPI.getAll();
+      setListings(response.data.listings || []);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch listings');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   const copyToClipboard = async (text: string, listingId: string) => {
     try {
@@ -212,6 +217,19 @@ const ListingsDisplay: React.FC = () => {
     } catch (err) {
       console.error('Failed to record favorite:', err);
       toast.error('Could not add to favorites.');
+    }
+  };
+
+  const handleDelete = async (listingId: string) => {
+    if (window.confirm('Are you sure you want to delete this listing permanently?')) {
+      try {
+        await listingAPI.delete(listingId);
+        toast.success('Listing deleted successfully.');
+        fetchListings(); // Refresh the list
+      } catch (err) {
+        console.error('Failed to delete listing:', err);
+        toast.error('Could not delete the listing.');
+      }
     }
   };
 
@@ -259,6 +277,7 @@ const ListingsDisplay: React.FC = () => {
             onInquiry={handleInquiry}
             onFavorite={handleFavorite}
             onCopy={copyToClipboard}
+            onDelete={handleDelete}
             copiedId={copiedId}
           />
         ))}

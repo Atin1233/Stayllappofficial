@@ -7,6 +7,9 @@ import { getPropertyById, StoredProperty } from '../storage/propertyStore';
 import { addListing, getAllListings as getStoredListings } from '../storage/listingStore';
 import { Listing } from '../models/Listing';
 import { generateListingWithVertexAI } from '../services/vertexai.service';
+import { ListingRepository } from '../repositories/listing.repository';
+import { PropertyRepository } from '../repositories/property.repository';
+import { type Property as PropertyModel } from '../models/Property';
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +21,9 @@ const HF_MODELS = [
   'google/flan-t5-base',      // Free, general-purpose text generation
   'gpt2'                     // Free, basic text generation
 ];
+
+const listingRepository = new ListingRepository();
+const propertyRepository = new PropertyRepository();
 
 /**
  * Generate a rental listing using Hugging Face Inference API
@@ -76,7 +82,7 @@ async function generateListingWithHuggingFace(prompt: string): Promise<string> {
 /**
  * Generate a prompt for the AI based on property details
  */
-function createListingPrompt(property: StoredProperty): string {
+function createListingPrompt(property: PropertyModel): string {
   return `Create a professional rental listing for:
 - ${property.title}
 - ${property.numberOfBedrooms} bedroom, ${property.numberOfBathrooms} bathroom
@@ -95,62 +101,35 @@ Make it attractive and professional for potential renters.`;
  * Now requires propertyId in the request body.
  */
 export async function generateListing(req: Request, res: Response): Promise<void> {
+  const { propertyId, userId } = req.body;
+  if (!propertyId || !userId) {
+    res.status(400).json({ success: false, error: 'propertyId and userId are required.' });
+    return;
+  }
+
   try {
-    const { propertyId } = req.body;
-    if (!propertyId) {
-      res.status(400).json({
-        success: false,
-        error: 'propertyId is required in the request body.'
-      });
-      return;
-    }
-
-    // Look up the property by ID
-    const property = getPropertyById(propertyId);
+    const property = await propertyRepository.getPropertyById(propertyId);
     if (!property) {
-      res.status(404).json({
-        success: false,
-        error: 'Property not found.'
-      });
+      res.status(404).json({ success: false, error: 'Property not found.' });
       return;
     }
 
-    // 1. Validate property data (optional, since it's already validated on creation)
-    // const validated: PropertyCreate = PropertyValidator.validateCreate(property);
-
-    // 2. Generate a prompt for the AI
     const prompt = createListingPrompt(property);
-
-    // 3. Send prompt to Vertex AI
     const listingText = await generateListingWithVertexAI(prompt);
 
-    // 4. Create a Listing object with UUID, propertyId, and propertyData snapshot
-    const newListing: Listing = {
-      id: uuidv4(),
+    const newListing = await listingRepository.createListing({
       listingText,
-      createdAt: new Date(),
       propertyId,
-      propertyData: property
-    };
-    
-    // 5. Store the listing in memory
-    addListing(newListing);
+      userId,
+    });
 
-    // 6. Return the generated listing as JSON
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      listing: listingText,
-      listingId: newListing.id,
-      propertyId: newListing.propertyId
+      listing: newListing,
     });
   } catch (error: any) {
     console.error('Listing generation error:', error);
-    
-    // Handle validation or AI errors
-    res.status(400).json({
-      success: false,
-      error: error.message || 'Failed to generate listing.'
-    });
+    res.status(500).json({ success: false, error: 'Failed to generate listing.' });
   }
 }
 
@@ -159,19 +138,29 @@ export async function generateListing(req: Request, res: Response): Promise<void
  */
 export async function getAllListings(req: Request, res: Response): Promise<void> {
   try {
-    const listings = getStoredListings();
-    
+    const listings = await listingRepository.getAllListings();
     res.status(200).json({
       success: true,
       listings,
-      count: listings.length
+      count: listings.length,
     });
   } catch (error: any) {
     console.error('Get listings error:', error);
-    
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to retrieve listings.'
-    });
+    res.status(500).json({ success: false, error: 'Failed to retrieve listings.' });
+  }
+}
+
+export async function deleteListing(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  try {
+    const deletedListing = await listingRepository.delete(id);
+    if (deletedListing) {
+      res.status(200).json({ success: true, message: 'Listing deleted successfully.' });
+    } else {
+      res.status(404).json({ success: false, error: 'Listing not found.' });
+    }
+  } catch (error: any) {
+    console.error(`Delete listing error for ID ${id}:`, error);
+    res.status(500).json({ success: false, error: 'Failed to delete listing.' });
   }
 } 

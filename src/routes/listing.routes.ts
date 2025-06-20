@@ -1,5 +1,5 @@
 import { Router, RequestHandler } from 'express';
-import { generateListing, getAllListings } from '../controllers/listing.controller';
+import { generateListing, getAllListings, deleteListing } from '../controllers/listing.controller';
 
 /**
  * Express router for listing-related routes
@@ -23,5 +23,11 @@ router.post('/generate-listing', generateListing as RequestHandler);
  * Returns JSON with array of all listings and count
  */
 router.get('/', getAllListings as RequestHandler);
+
+/**
+ * DELETE /:id
+ * Deletes a listing by its ID
+ */
+router.delete('/:id', deleteListing as RequestHandler);
 
 export default router; 

@@ -5,7 +5,8 @@ import {
   recordListingInquiry,
   recordListingFavorite,
   getListingAnalytics,
-  getUserListingsAnalytics
+  getUserListingsAnalytics,
+  getDashboardSummary
 } from '../controllers/analytics.controller';
 
 const router = Router();
@@ -18,5 +19,6 @@ router.post('/listings/:listingId/favorite', recordListingFavorite);
 // Protected routes (authentication required)
 router.get('/listings/:listingId', authenticateToken, getListingAnalytics);
 router.get('/user/listings', authenticateToken, getUserListingsAnalytics);
+router.get('/summary', authenticateToken, getDashboardSummary);
 
 export default router; 

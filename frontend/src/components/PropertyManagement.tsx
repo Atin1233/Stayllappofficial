@@ -32,9 +32,9 @@ const PropertyManagement: React.FC = () => {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState('');
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
-  const [isAnalysisModalOpen, setAnalysisModalOpen] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<PhotoAnalysisResult | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analyzingPropertyId, setAnalyzingPropertyId] = useState<string | null>(null);
 
   const [editForm, setEditForm] = useState<EditFormState>({
     title: '',
@@ -220,7 +220,8 @@ const PropertyManagement: React.FC = () => {
 
   const handleAnalyzePhotos = async (propertyId: string) => {
     setAnalysisLoading(true);
-    setAnalysisModalOpen(true);
+    setAnalyzingPropertyId(propertyId);
+    setAnalysisResult(null); // Clear previous results
     try {
       const response = await propertyAPI.analyzePhotos(propertyId);
       if (response.data.success) {
@@ -228,20 +229,13 @@ const PropertyManagement: React.FC = () => {
         toast.success('Photo analysis successful!');
       } else {
         toast.error(response.data.error || 'Failed to analyze photos.');
-        setAnalysisModalOpen(false);
       }
     } catch (error) {
       console.error('Failed to analyze photos:', error);
       toast.error('An error occurred during photo analysis.');
-      setAnalysisModalOpen(false);
     } finally {
       setAnalysisLoading(false);
     }
-  };
-
-  const closeAnalysisModal = () => {
-    setAnalysisModalOpen(false);
-    setAnalysisResult(null);
   };
 
   if (loading) {
@@ -550,13 +544,14 @@ const PropertyManagement: React.FC = () => {
                         {generateError && (
                           <div className="text-red-600 mt-2">{generateError}</div>
                         )}
+                        <button
+                          onClick={() => handleAnalyzePhotos(property.id)}
+                          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                          disabled={analysisLoading && analyzingPropertyId === property.id}
+                        >
+                          {analysisLoading && analyzingPropertyId === property.id ? 'Analyzing...' : 'Analyze Photos'}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleAnalyzePhotos(property.id)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Analyze Photos
-                      </button>
                     </div>
                   )}
                 </div>
@@ -566,55 +561,43 @@ const PropertyManagement: React.FC = () => {
         )}
       </div>
       <Toaster position="bottom-right" />
-      {isAnalysisModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-          <div className="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Photo Analysis</h3>
-              <div className="mt-2 px-7 py-3">
-                {analysisLoading ? (
-                  <p>Analyzing photos...</p>
-                ) : (
-                  analysisResult && (
-                    <div className="text-sm text-gray-700 text-left">
-                      <h4 className="font-semibold">Overall Feedback:</h4>
-                      <p>{analysisResult.overallFeedback}</p>
 
-                      <h4 className="font-semibold mt-4">Suggestions:</h4>
-                      <ul className="list-disc list-inside">
-                        {analysisResult.suggestions.map((suggestion, i) => (
-                          <li key={i}>{suggestion}</li>
+      {/* Analysis Section */}
+      {analyzingPropertyId && (
+        <div className="mt-8 p-6 bg-gray-800 rounded-lg">
+            <h2 className="text-2xl font-bold mb-4">Photo Analysis</h2>
+            {analysisLoading && (
+                <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                    <p className="ml-4">Analyzing photos, this may take a moment...</p>
+                </div>
+            )}
+            {analysisResult && (
+                <div>
+                    <h3 className="text-xl font-semibold">Overall Feedback:</h3>
+                    <p className="text-gray-300 mb-4">{analysisResult.overallFeedback}</p>
+                    
+                    <h3 className="text-xl font-semibold">Suggestions:</h3>
+                    <ul className="list-disc list-inside text-gray-300 mb-4">
+                        {analysisResult.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+
+                    <h3 className="text-xl font-semibold">Missing Photo Types:</h3>
+                    <ul className="list-disc list-inside text-gray-300 mb-4">
+                        {analysisResult.missingPhotos.map((p, i) => <li key={i}>{p}</li>)}
+                    </ul>
+
+                    <h3 className="text-xl font-semibold">Photo-Specific Feedback:</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                        {analysisResult.photoSpecificFeedback.map((p, i) => (
+                            <div key={i} className="bg-gray-700 p-4 rounded">
+                                <img src={p.photoUrl} alt="Analyzed property" className="w-full h-48 object-cover rounded-md mb-2"/>
+                                <p>{p.feedback}</p>
+                            </div>
                         ))}
-                      </ul>
-
-                      <h4 className="font-semibold mt-4">Missing Photos:</h4>
-                       <ul className="list-disc list-inside">
-                        {analysisResult.missingPhotos.map((photo, i) => (
-                          <li key={i}>{photo}</li>
-                        ))}
-                      </ul>
-
-                      <h4 className="font-semibold mt-4">Photo-Specific Feedback:</h4>
-                      {analysisResult.photoSpecificFeedback.map((item, i) => (
-                        <div key={i} className="mt-2">
-                          <img src={item.photoUrl} alt="property" className="w-32 h-32 object-cover rounded-md inline-block mr-4"/>
-                          <p className="inline-block align-top w-2/3">{item.feedback}</p>
-                        </div>
-                      ))}
                     </div>
-                  )
-                )}
-              </div>
-              <div className="items-center px-4 py-3">
-                <button
-                  onClick={closeAnalysisModal}
-                  className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+                </div>
+            )}
         </div>
       )}
     </div>

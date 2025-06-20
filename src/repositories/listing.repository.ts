@@ -255,17 +255,39 @@ export class ListingRepository {
   /**
    * Delete listing by ID
    */
-  async deleteListingById(id: string, userId: string): Promise<boolean> {
+  async delete(id: string): Promise<Listing | null> {
     try {
-      await prisma.listing.delete({
-        where: { 
-          id,
-          userId // Ensure user owns the listing
+      const deletedListing = await prisma.listing.delete({
+        where: { id },
+        include: {
+          property: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                  userType: true
+                }
+              }
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              userType: true
+            }
+          }
         }
       });
-      return true;
+      return this.convertPrismaListingToListing(deletedListing);
     } catch (error) {
-      return false;
+      // Record not found
+      return null;
     }
   }
 

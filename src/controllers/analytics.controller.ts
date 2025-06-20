@@ -149,4 +149,28 @@ export async function getUserListingsAnalytics(req: AuthenticatedRequest, res: R
       error: error.message || 'Failed to get user listings analytics'
     });
   }
+}
+
+/**
+ * Get summary analytics for the user's dashboard
+ */
+export async function getDashboardSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'User not authenticated' });
+      return;
+    }
+
+    const summary = await analyticsService.getDashboardSummary(userId);
+    res.status(200).json({
+      success: true,
+      summary
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get dashboard summary'
+    });
+  }
 } 
