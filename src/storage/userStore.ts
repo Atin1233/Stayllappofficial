@@ -37,7 +37,9 @@ export async function addUser(userData: UserCreate): Promise<StoredUser> {
     userType: userData.userType || 'landlord', // Ensure userType has a value
     isActive: true,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    phone: userData.phone ?? '',
+    companyName: userData.companyName ?? '',
   };
   
   users.push(newUser);
@@ -73,11 +75,23 @@ export async function updateUserById(id: string, updateData: UserUpdate): Promis
   if (userIndex === -1) {
     return null;
   }
+  const existingUser = users[userIndex];
+  if (!existingUser) {
+    return null;
+  }
 
   const updatedUser: StoredUser = {
-    ...users[userIndex],
-    ...updateData,
-    updatedAt: new Date()
+    id: existingUser.id,
+    email: (updateData as any).email ?? existingUser.email,
+    password: (updateData as any).password ?? existingUser.password,
+    firstName: updateData.firstName ?? existingUser.firstName,
+    lastName: updateData.lastName ?? existingUser.lastName,
+    userType: updateData.userType ?? existingUser.userType,
+    isActive: updateData.isActive ?? existingUser.isActive,
+    createdAt: existingUser.createdAt,
+    updatedAt: new Date(),
+    phone: updateData.phone ?? existingUser.phone ?? '',
+    companyName: updateData.companyName ?? existingUser.companyName ?? '',
   };
 
   users[userIndex] = updatedUser;
@@ -92,10 +106,12 @@ export function deleteUserById(id: string): boolean {
   if (userIndex === -1) {
     return false;
   }
-
-  users[userIndex].isActive = false;
-  users[userIndex].updatedAt = new Date();
-  return true;
+  if (users[userIndex]) {
+    users[userIndex].isActive = false;
+    users[userIndex].updatedAt = new Date();
+    return true;
+  }
+  return false;
 }
 
 /**

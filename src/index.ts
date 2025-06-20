@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import propertyRoutes from './routes/property.routes';
 import listingRoutes from './routes/listing.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import { checkDatabaseConnection, initializeDatabase } from './services/database.service';
 
 const app = express();
@@ -21,6 +22,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

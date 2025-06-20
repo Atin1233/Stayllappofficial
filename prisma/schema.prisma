@@ -61,6 +61,23 @@ model Listing {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  analytics   ListingAnalytics?
 
   @@map("listings")
+}
+
+model ListingAnalytics {
+  id                String   @id @default(cuid())
+  listingId         String   @unique
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  views             Int      @default(0)
+  inquiries         Int      @default(0)
+  favorited         Int      @default(0)
+  lastViewed        DateTime @default(now())
+  averageViewTime   Float    @default(0)
+  clickThroughRate  Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("listing_analytics")
 }

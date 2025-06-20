@@ -6,72 +6,69 @@ import { PropertyValidator, PropertyCreate } from '../models/Property';
 import { getPropertyById, StoredProperty } from '../storage/propertyStore';
 import { addListing, getAllListings as getStoredListings } from '../storage/listingStore';
 import { Listing } from '../models/Listing';
+import { generateListingWithVertexAI } from '../services/vertexai.service';
 
 // Load environment variables
 dotenv.config();
 
 // Hugging Face API configuration
 const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
-const HF_MODEL = 'microsoft/DialoGPT-medium'; // Reliable model available through Inference API
+const HF_MODELS = [
+  'tiiuae/falcon-7b-instruct', // Free, reliable instruct model
+  'google/flan-t5-base',      // Free, general-purpose text generation
+  'gpt2'                     // Free, basic text generation
+];
 
 /**
  * Generate a rental listing using Hugging Face Inference API
  */
 async function generateListingWithHuggingFace(prompt: string): Promise<string> {
   try {
-    // Check if API key is available and valid
-    console.log('HF_API_KEY value:', HF_API_KEY ? 'present' : 'missing');
-    console.log('HF_API_KEY type:', typeof HF_API_KEY);
-    
     if (!HF_API_KEY || HF_API_KEY.trim() === '' || HF_API_KEY === 'undefined') {
       console.warn('Hugging Face API key not configured, using fallback response');
       return `🏠 Beautiful Property Available!\n\nExperience modern living in this spacious property with great amenities. Perfect location with easy access to transportation. Available now for immediate move-in. Contact us today to schedule a viewing!\n\n${prompt}`;
     }
 
-    // Use a simpler, more reliable model
-    const response = await fetch(`https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: `Create a professional rental listing: ${prompt}`,
-        parameters: {
-          max_length: 150,
-          temperature: 0.8,
-          do_sample: true,
-          return_full_text: false
+    let lastError = null;
+    for (const model of HF_MODELS) {
+      const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HF_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: `Create a professional rental listing: ${prompt}`,
+          parameters: {
+            max_length: 150,
+            temperature: 0.8,
+            do_sample: true,
+            return_full_text: false
+          }
+        })
+      });
+      console.log(`Hugging Face API response status for model ${model}:`, response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Hugging Face API response data:', data);
+        if (Array.isArray(data) && data.length > 0) {
+          const generatedText = data[0].generated_text || data[0].text || '';
+          if (generatedText) return generatedText;
+        } else if (typeof data === 'string') {
+          return data;
+        } else if (data && typeof data === 'object' && 'generated_text' in data) {
+          return (data as any).generated_text;
         }
-      })
-    });
-
-    console.log('Hugging Face API response status:', response.status);
-
-    if (!response.ok) {
-      console.error('Hugging Face API error response:', response.status, response.statusText);
-      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
+      } else {
+        lastError = `Model ${model} failed: ${response.status} ${response.statusText}`;
+        // Try next model if 404 or 500
+        if (response.status !== 404 && response.status !== 500) break;
+      }
     }
-
-    const data = await response.json();
-    console.log('Hugging Face API response data:', data);
-    
-    // Handle different response formats from Hugging Face
-    if (Array.isArray(data) && data.length > 0) {
-      const generatedText = data[0].generated_text || data[0].text || '';
-      return generatedText || 'Unable to generate listing at this time.';
-    } else if (typeof data === 'string') {
-      return data;
-    } else if (data && typeof data === 'object' && 'generated_text' in data) {
-      return (data as any).generated_text;
-    } else {
-      console.warn('Unexpected response format from Hugging Face API:', data);
-      return 'Unable to generate listing at this time.';
-    }
+    console.error('All Hugging Face models failed.', lastError);
+    return `🏠 Beautiful Property Available!\n\nExperience modern living in this spacious property with great amenities. Perfect location with easy access to transportation. Available now for immediate move-in. Contact us today to schedule a viewing!\n\n${prompt}`;
   } catch (error) {
     console.error('Hugging Face API Error:', error);
-    
-    // Fallback to mock response if API fails
     return `🏠 Beautiful Property Available!\n\nExperience modern living in this spacious property with great amenities. Perfect location with easy access to transportation. Available now for immediate move-in. Contact us today to schedule a viewing!\n\n${prompt}`;
   }
 }
@@ -124,8 +121,8 @@ export async function generateListing(req: Request, res: Response): Promise<void
     // 2. Generate a prompt for the AI
     const prompt = createListingPrompt(property);
 
-    // 3. Send prompt to Hugging Face API
-    const listingText = await generateListingWithHuggingFace(prompt);
+    // 3. Send prompt to Vertex AI
+    const listingText = await generateListingWithVertexAI(prompt);
 
     // 4. Create a Listing object with UUID, propertyId, and propertyData snapshot
     const newListing: Listing = {

@@ -209,14 +209,16 @@ export class ListingRepository {
     listingText?: string;
   }, userId: string): Promise<Listing | null> {
     try {
+      const updateFields: any = {};
+      if (typeof updateData.listingText !== 'undefined') {
+        updateFields.listingText = updateData.listingText;
+      }
       const updatedListing = await prisma.listing.update({
         where: { 
           id,
           userId // Ensure user owns the listing
         },
-        data: {
-          listingText: updateData.listingText
-        },
+        data: updateFields,
         include: {
           property: {
             include: {

@@ -37,10 +37,24 @@ export const PropertySchema = z.object({
     }
     return val;
   }, z.date()).default(() => new Date()),
-  photos: z.array(z.string().url('Photo URLs must be valid URLs')).min(1, 'At least one photo is required').max(20, 'Maximum 20 photos allowed'),
+  photos: z.array(z.string().min(1, "Photo URLs cannot be empty")).min(1, 'At least one photo is required').max(20, 'Maximum 20 photos allowed'),
   
   // Optional metadata
-  propertyType: z.enum(['apartment', 'house', 'condo', 'townhouse', 'studio', 'other']).default('apartment'),
+  propertyType: z.enum([
+    'any',
+    'house',
+    'apartment',
+    'townhouse',
+    'condo',
+    'cooperative',
+    'mobile_home',
+    'planned_development',
+    'other',
+    'multiplex',
+    'duplex',
+    'triplex',
+    'four_plex'
+  ]).default('house'),
   parkingSpaces: z.number().int().min(0).optional(),
   petFriendly: z.boolean().default(false),
   utilitiesIncluded: z.boolean().default(false),
@@ -150,7 +164,7 @@ export const DEFAULT_PROPERTY_VALUES: PropertyCreateInput = {
   amenities: [],
   availabilityDate: new Date(),
   photos: [],
-  propertyType: 'apartment',
+  propertyType: 'house',
   petFriendly: false,
   utilitiesIncluded: false,
 };

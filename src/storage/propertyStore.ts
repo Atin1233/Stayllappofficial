@@ -1,4 +1,5 @@
 import { PropertyCreate } from '../models/Property';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Property interface for storage
@@ -14,7 +15,7 @@ export interface StoredProperty extends PropertyCreate {
  * This simulates a database during development, allowing landlords to
  * manage their properties before full database integration in Phase 3.
  */
-const properties: StoredProperty[] = [];
+let properties: StoredProperty[] = [];
 
 /**
  * Add a new property to the in-memory store
@@ -48,10 +49,30 @@ export function getPropertyById(id: string): StoredProperty | undefined {
  * Delete a property by ID
  */
 export function deletePropertyById(id: string): boolean {
-  const index = properties.findIndex(property => property.id === id);
-  if (index !== -1) {
-    properties.splice(index, 1);
-    return true;
+  const initialLength = properties.length;
+  properties = properties.filter(p => p.id !== id);
+  return properties.length < initialLength;
+}
+
+export function bulkDeletePropertiesById(ids: string[]): number {
+  const initialLength = properties.length;
+  const idSet = new Set(ids);
+  properties = properties.filter(p => !idSet.has(p.id));
+  return initialLength - properties.length;
+}
+
+export function updatePropertyById(id: string, updates: Partial<PropertyCreate>): StoredProperty | null {
+  const propertyToUpdate = properties.find(p => p.id === id);
+
+  if (!propertyToUpdate) {
+    return null;
   }
-  return false;
+  
+  const updatedProperty: StoredProperty = {
+    ...propertyToUpdate,
+    ...updates,
+  };
+  
+  properties = properties.map(p => (p.id === id ? updatedProperty : p));
+  return updatedProperty;
 } 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { propertyAPI, listingAPI } from '../services/api';
+import { propertyAPI, listingAPI, analyticsAPI } from '../services/api';
 
 interface Property {
   id: string;
@@ -15,32 +15,66 @@ interface Listing {
   createdAt: string;
 }
 
+interface ListingAnalytics {
+  id: string;
+  propertyTitle: string;
+  views: number;
+  inquiries: number;
+  favorited: number;
+  lastViewed: string | null;
+  averageViewTime: number;
+  clickThroughRate: number;
+}
+
+interface UserAnalytics {
+  totalViews: number;
+  totalInquiries: number;
+  totalFavorites: number;
+  avgViewsPerListing: number;
+  avgInquiriesPerListing: number;
+  listingsCount: number;
+  listings: ListingAnalytics[];
+}
+
 const Analytics: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadData();
-  }, []);
+    let isMounted = true;
 
-  const loadData = async () => {
-    try {
-      const [propertiesResponse, listingsResponse] = await Promise.all([
-        propertyAPI.getAll(),
-        listingAPI.getAll()
-      ]);
-      
-      setProperties(propertiesResponse.data.properties);
-      setListings(listingsResponse.data.listings);
-    } catch (err: any) {
-      setError('Failed to load analytics data');
-      console.error('Analytics load error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadData = async () => {
+      try {
+        const [propertiesResponse, listingsResponse, analyticsResponse] = await Promise.all([
+          propertyAPI.getAll(),
+          listingAPI.getAll(),
+          analyticsAPI.getUserListingsAnalytics()
+        ]);
+        
+        if (isMounted) {
+          setProperties(propertiesResponse.data.properties);
+          setListings(listingsResponse.data.listings);
+          setAnalytics(analyticsResponse.data.analytics);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setError('Failed to load analytics data');
+          console.error('Analytics load error:', err);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const calculateStats = () => {
     const totalProperties = properties.length;
@@ -114,13 +148,14 @@ const Analytics: React.FC = () => {
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-600 rounded-md flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-green-600">Total Listings</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalListings}</p>
+                <p className="text-sm font-medium text-green-600">Total Views</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics?.totalViews || 0}</p>
               </div>
             </div>
           </div>
@@ -130,13 +165,13 @@ const Analytics: React.FC = () => {
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-yellow-600 rounded-md flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-yellow-600">Avg Rent</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.avgRent.toFixed(0)}</p>
+                <p className="text-sm font-medium text-yellow-600">Total Inquiries</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics?.totalInquiries || 0}</p>
               </div>
             </div>
           </div>
@@ -146,13 +181,13 @@ const Analytics: React.FC = () => {
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-purple-600 rounded-md flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-purple-600">New (30 days)</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.recentProperties}</p>
+                <p className="text-sm font-medium text-purple-600">Total Favorites</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics?.totalFavorites || 0}</p>
               </div>
             </div>
           </div>
@@ -188,35 +223,60 @@ const Analytics: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700">Properties Listed</span>
-                <span className="text-sm text-gray-500">{stats.totalListings} of {stats.totalProperties}</span>
+                <span className="text-sm text-gray-500">{stats.totalListings} / {stats.totalProperties}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="mt-8 bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            {properties.slice(0, 5).map((property) => (
-              <div key={property.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{property.title}</p>
-                  <p className="text-xs text-gray-500">
-                    Added {new Date(property.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">${property.rent}/month</p>
-                  <p className="text-xs text-gray-500 capitalize">{property.propertyType}</p>
-                </div>
-              </div>
-            ))}
-            {properties.length === 0 && (
-              <p className="text-gray-500 text-sm">No recent activity</p>
-            )}
+        {/* Listing Performance */}
+        {analytics && analytics.listings.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Listing Performance</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inquiries</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Favorites</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg View Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CTR</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Viewed</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {analytics.listings.map((listing) => (
+                    <tr key={listing.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {listing.propertyTitle}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {listing.views}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {listing.inquiries}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {listing.favorited}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {listing.averageViewTime.toFixed(1)}s
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {listing.clickThroughRate.toFixed(2)}%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {listing.lastViewed ? new Date(listing.lastViewed).toLocaleDateString() : 'Never'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

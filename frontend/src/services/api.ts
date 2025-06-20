@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -23,9 +23,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Redirect to login page and clear history
+      window.location.href = '/login'; 
     }
     return Promise.reject(error);
   }
@@ -46,6 +47,12 @@ export const propertyAPI = {
   create: (propertyData: any) => api.post('/properties', propertyData),
   update: (id: string, propertyData: any) => api.put(`/properties/${id}`, propertyData),
   delete: (id: string) => api.delete(`/properties/${id}`),
+  bulkDelete: (ids: string[]) => api.post('/properties/bulk-delete', { ids }),
+  export: (ids?: string[]) => api.post('/properties/export', { ids }, { responseType: 'blob' }),
+  exportJson: (ids?: string[]) => api.post('/properties/export', { ids, format: 'json' }, { responseType: 'blob' }),
+  analyzeRent: (propertyId: string) => api.post(`/properties/${propertyId}/analyze-rent`),
+  analyzeNewPropertyRent: (propertyData: any) => api.post('/properties/analyze-rent', propertyData),
+  analyzePhotos: (id: string) => api.post(`/properties/${id}/analyze-photos`),
 };
 
 // Listing API
@@ -55,6 +62,20 @@ export const listingAPI = {
   create: (listingData: any) => api.post('/listings', listingData),
   generateListing: (propertyId: string) => api.post(`/listings/generate-listing`, { propertyId }),
   delete: (id: string) => api.delete(`/listings/${id}`),
+};
+
+// Analytics API
+export const analyticsAPI = {
+  recordView: (listingId: string, viewDuration: number) => 
+    api.post(`/analytics/listings/${listingId}/view`, { viewDuration }),
+  recordInquiry: (listingId: string) => 
+    api.post(`/analytics/listings/${listingId}/inquiry`),
+  recordFavorite: (listingId: string) => 
+    api.post(`/analytics/listings/${listingId}/favorite`),
+  getListingAnalytics: (listingId: string) => 
+    api.get(`/analytics/listings/${listingId}`),
+  getUserListingsAnalytics: () => 
+    api.get('/analytics/user/listings')
 };
 
 export default api; 

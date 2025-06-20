@@ -119,29 +119,29 @@ export class PropertyRepository {
    */
   async updatePropertyById(id: string, updateData: PropertyUpdate, userId: string): Promise<Property | null> {
     try {
+      const updateFields: any = {};
+      if (typeof updateData.title !== 'undefined') updateFields.title = updateData.title;
+      if (typeof updateData.address !== 'undefined') updateFields.address = updateData.address;
+      if (typeof updateData.city !== 'undefined') updateFields.city = updateData.city;
+      if (typeof updateData.state !== 'undefined') updateFields.state = updateData.state;
+      if (typeof updateData.zip !== 'undefined') updateFields.zip = updateData.zip;
+      if (typeof updateData.numberOfBedrooms !== 'undefined') updateFields.numberOfBedrooms = updateData.numberOfBedrooms;
+      if (typeof updateData.numberOfBathrooms !== 'undefined') updateFields.numberOfBathrooms = updateData.numberOfBathrooms;
+      if (typeof updateData.squareFootage !== 'undefined') updateFields.squareFootage = updateData.squareFootage;
+      if (typeof updateData.rent !== 'undefined') updateFields.rent = updateData.rent;
+      if (typeof updateData.description !== 'undefined') updateFields.description = updateData.description;
+      if (typeof updateData.amenities !== 'undefined') updateFields.amenities = JSON.stringify(updateData.amenities);
+      if (typeof updateData.availabilityDate !== 'undefined') updateFields.availabilityDate = updateData.availabilityDate;
+      if (typeof updateData.photos !== 'undefined') updateFields.photos = JSON.stringify(updateData.photos);
+      if (typeof updateData.propertyType !== 'undefined') updateFields.propertyType = updateData.propertyType?.toUpperCase();
+      if (typeof updateData.petFriendly !== 'undefined') updateFields.petFriendly = updateData.petFriendly;
+      if (typeof updateData.utilitiesIncluded !== 'undefined') updateFields.utilitiesIncluded = updateData.utilitiesIncluded;
       const updatedProperty = await prisma.property.update({
         where: { 
           id,
           userId // Ensure user owns the property
         },
-        data: {
-          title: updateData.title,
-          address: updateData.address,
-          city: updateData.city,
-          state: updateData.state,
-          zip: updateData.zip,
-          numberOfBedrooms: updateData.numberOfBedrooms,
-          numberOfBathrooms: updateData.numberOfBathrooms,
-          squareFootage: updateData.squareFootage || null,
-          rent: updateData.rent,
-          description: updateData.description,
-          amenities: updateData.amenities ? JSON.stringify(updateData.amenities) : undefined,
-          availabilityDate: updateData.availabilityDate,
-          photos: updateData.photos ? JSON.stringify(updateData.photos) : undefined,
-          propertyType: updateData.propertyType?.toUpperCase() as any,
-          petFriendly: updateData.petFriendly,
-          utilitiesIncluded: updateData.utilitiesIncluded
-        },
+        data: updateFields,
         include: {
           user: {
             select: {
