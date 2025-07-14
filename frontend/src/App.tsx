@@ -75,22 +75,25 @@ function App() {
         }}
       />
       <Router>
-        <div className="min-h-screen bg-white font-sans text-stayll-charcoal flex flex-col">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col">
           <Navigation />
-          <main className="flex-1 w-full flex flex-col items-center justify-center px-4 py-12">
-            <div className="w-full max-w-4xl mx-auto">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/add-property" element={<PropertyForm onPropertyCreated={() => window.location.href = '/properties'} />} />
-                <Route path="/properties" element={<PropertyManagement />} />
-                <Route path="/listings" element={<ListingsDisplay />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-              </Routes>
-            </div>
-          </main>
+          <div className="flex flex-1">
+            <Sidebar />
+            <main className="flex-1 w-full flex flex-col items-center justify-center overflow-auto">
+              <div className="w-full max-w-screen-xl mx-auto pt-8 pb-12">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/add-property" element={<PropertyForm onPropertyCreated={() => window.location.href = '/properties'} />} />
+                  <Route path="/properties" element={<PropertyManagement />} />
+                  <Route path="/listings" element={<ListingsDisplay />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </div>
+            </main>
+          </div>
           <Footer />
         </div>
       </Router>
