@@ -1,5 +1,6 @@
 import { Router, RequestHandler } from 'express';
 import { generateListing, getAllListings, deleteListing } from '../controllers/listing.controller';
+import { authenticateToken } from '../middleware/auth.middleware';
 
 /**
  * Express router for listing-related routes
@@ -14,6 +15,7 @@ const router = Router();
  * Request body should contain property data matching PropertyCreate schema
  * Returns JSON with generated listing text and listing ID
  */
+// Temporarily removed authentication for development
 router.post('/generate-listing', generateListing as RequestHandler);
 
 /**

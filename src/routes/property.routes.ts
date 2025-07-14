@@ -26,7 +26,8 @@ const router = Router();
  * Request body should contain property data matching PropertyCreate schema
  * Returns JSON with created property and success message
  */
-router.post('/', authenticateToken, createProperty);
+// Temporarily removed authentication for development
+router.post('/', createProperty);
 
 /**
  * GET /

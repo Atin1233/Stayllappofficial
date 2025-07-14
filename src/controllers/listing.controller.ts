@@ -101,6 +101,7 @@ Make it attractive and professional for potential renters.`;
  * Now requires propertyId in the request body.
  */
 export async function generateListing(req: Request, res: Response): Promise<void> {
+  console.log('DEBUG: /api/listings/generate-listing hit with body:', req.body);
   const { propertyId, userId } = req.body;
   if (!propertyId || !userId) {
     res.status(400).json({ success: false, error: 'propertyId and userId are required.' });
@@ -108,29 +109,109 @@ export async function generateListing(req: Request, res: Response): Promise<void
   }
 
   try {
-    const property = await propertyRepository.getPropertyById(propertyId);
+    console.log(`DEBUG: Attempting to find property with ID: ${propertyId}`);
+    let property;
+    let useDatabase = true;
+    // Before DB fetch
+    console.log('DEBUG: Before propertyRepository.getPropertyById');
+    property = await propertyRepository.getPropertyById(propertyId || '');
+    // After DB fetch
+    console.log('DEBUG: After propertyRepository.getPropertyById:', property ? 'Found' : 'Not found');
+    if (!property) {
+      console.log(`DEBUG: Property not found in database, trying in-memory store`);
+      const inMemoryProperty = getPropertyById(propertyId || '');
+      if (inMemoryProperty) {
+        console.log(`DEBUG: Property found in in-memory store: ${inMemoryProperty.title}`);
+        property = {
+          ...inMemoryProperty,
+          updatedAt: new Date(),
+          isActive: true
+        };
+        useDatabase = false;
+      }
+    }
+    console.log(`DEBUG: Property search result:`, property ? `Found property: ${property.title}` : 'Property not found');
     if (!property) {
       res.status(404).json({ success: false, error: 'Property not found.' });
       return;
     }
-
     const prompt = createListingPrompt(property);
-    const listingText = await generateListingWithVertexAI(prompt);
-
-    const newListing = await listingRepository.createListing({
-      listingText,
-      propertyId,
-      userId,
-    });
-
-    res.status(201).json({
-      success: true,
-      listing: newListing,
-    });
+    console.log(`DEBUG: Generated prompt for AI:`, prompt);
+    // Before AI call
+    console.log('DEBUG: Before generateListingWithVertexAI');
+    // Add timeout to AI call
+    let listingText;
+    try {
+      listingText = await Promise.race([
+        generateListingWithVertexAI(prompt),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('VertexAI service timeout')), 15000))
+      ]);
+      console.log('DEBUG: After generateListingWithVertexAI');
+    } catch (aiError) {
+      const err = aiError instanceof Error ? aiError : new Error(String(aiError));
+      console.error('VertexAI service error or timeout:', err);
+      res.status(500).json({ success: false, error: err.message || 'VertexAI service failed.' });
+      return;
+    }
+    if (useDatabase) {
+      // Before DB listing creation
+      console.log('DEBUG: Before listingRepository.createListing');
+      try {
+        const newListing = await listingRepository.createListing({
+          listingText,
+          propertyId,
+          userId,
+        });
+        // After DB listing creation
+        console.log(`DEBUG: Listing created successfully with ID: ${newListing.id}`);
+        res.status(201).json({
+          success: true,
+          listing: newListing,
+        });
+      } catch (error: any) {
+        console.error('Database listing creation error:', error);
+        // If database creation fails, fall back to in-memory listing
+        console.log(`DEBUG: Database listing creation failed, falling back to in-memory listing`);
+        const inMemoryListing = createInMemoryListing(listingText, propertyId, userId);
+        res.status(201).json({
+          success: true,
+          listing: inMemoryListing,
+        });
+      }
+    } else {
+      // If we're using an in-memory property, create an in-memory listing
+      console.log(`DEBUG: Creating in-memory listing for property: ${propertyId}, user: ${userId}`);
+      const inMemoryListing = createInMemoryListing(listingText, propertyId, userId);
+      res.status(201).json({
+        success: true,
+        listing: inMemoryListing,
+      });
+    }
   } catch (error: any) {
-    console.error('Listing generation error:', error);
-    res.status(500).json({ success: false, error: 'Failed to generate listing.' });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Listing generation error:', errorMessage);
+    res.status(500).json({ success: false, error: errorMessage });
   }
+}
+
+/**
+ * Helper function to create an in-memory listing
+ */
+function createInMemoryListing(listingText: string, propertyId: string, userId: string): Listing {
+  const listingId = `listing_${Date.now()}`;
+  // Ensure propertyId is a string
+  const safePropertyId = propertyId || '';
+  const property = getPropertyById(safePropertyId);
+  const listing: Listing = {
+    id: listingId,
+    listingText,
+    propertyId: safePropertyId,
+    createdAt: new Date(),
+    propertyData: property ? { ...property, isActive: true } : undefined
+  };
+  // Store the listing in memory
+  addListing(listing);
+  return listing;
 }
 
 /**

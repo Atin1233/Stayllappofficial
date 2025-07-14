@@ -234,9 +234,11 @@ export class PropertyRepository {
 
   /**
    * Convert Prisma property to our Property interface
+   * Handles null to undefined conversion and parses JSON fields
    */
   private convertPrismaPropertyToProperty(prismaProperty: any): Property {
     return {
+      id: prismaProperty.id,
       title: prismaProperty.title,
       address: prismaProperty.address,
       city: prismaProperty.city,
@@ -244,18 +246,31 @@ export class PropertyRepository {
       zip: prismaProperty.zip,
       numberOfBedrooms: prismaProperty.numberOfBedrooms,
       numberOfBathrooms: prismaProperty.numberOfBathrooms,
-      squareFootage: prismaProperty.squareFootage || undefined,
+      squareFootage: prismaProperty.squareFootage,
       rent: prismaProperty.rent,
       description: prismaProperty.description,
-      amenities: JSON.parse(prismaProperty.amenities || '[]'), // Parse JSON string back to array
+      amenities: typeof prismaProperty.amenities === 'string'
+        ? JSON.parse(prismaProperty.amenities)
+        : prismaProperty.amenities,
       availabilityDate: prismaProperty.availabilityDate,
-      photos: JSON.parse(prismaProperty.photos || '[]'), // Parse JSON string back to array
-      propertyType: prismaProperty.propertyType.toLowerCase() as any,
+      photos: typeof prismaProperty.photos === 'string'
+        ? JSON.parse(prismaProperty.photos)
+        : prismaProperty.photos,
+      propertyType: prismaProperty.propertyType?.toLowerCase() || 'house',
       petFriendly: prismaProperty.petFriendly,
       utilitiesIncluded: prismaProperty.utilitiesIncluded,
       createdAt: prismaProperty.createdAt,
       updatedAt: prismaProperty.updatedAt,
-      isActive: true // Default to true for existing properties
+      isActive: prismaProperty.isActive,
+      user: prismaProperty.user
+        ? {
+            id: prismaProperty.user.id,
+            email: prismaProperty.user.email,
+            firstName: prismaProperty.user.firstName,
+            lastName: prismaProperty.user.lastName,
+            userType: prismaProperty.user.userType?.toLowerCase() || 'landlord'
+          }
+        : undefined
     };
   }
 } 

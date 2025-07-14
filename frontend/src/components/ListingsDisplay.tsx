@@ -91,24 +91,24 @@ const ListingCard: React.FC<{
   };
 
   return (
-    <div ref={analyticsRef} key={listing.id} className="bg-white shadow rounded-lg p-6">
+    <div ref={analyticsRef} key={listing.id} className="card p-6 group hover:scale-[1.02] transition-all duration-300">
       {/* Property Info Header */}
-      <div className="border-b border-gray-200 pb-4 mb-4">
+      <div className="border-b border-surface-600/30 pb-4 mb-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {listing.property ? listing.property.title : <span className="text-red-500">[No property data]</span>}
+            <h3 className="text-lg font-semibold text-white">
+              {listing.property ? listing.property.title : <span className="text-destructive-400">[No property data]</span>}
             </h3>
-            <p className="text-gray-600">
-              {listing.property ? `${listing.property.address}, ${listing.property.city}, ${listing.property.state}` : <span className="text-red-500">[No address]</span>}
+            <p className="text-surface-300">
+              {listing.property ? `${listing.property.address}, ${listing.property.city}, ${listing.property.state}` : <span className="text-destructive-400">[No address]</span>}
             </p>
-            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-4 mt-2 text-sm text-surface-400">
               <span>{listing.property ? `${listing.property.numberOfBedrooms} bed` : ''}</span>
               <span>{listing.property ? `${listing.property.numberOfBathrooms} bath` : ''}</span>
               <span>{listing.property ? `$${listing.property.rent}/month` : ''}</span>
             </div>
           </div>
-          <div className="text-right text-sm text-gray-500">
+          <div className="text-right text-sm text-surface-400">
             <div>Created: {formatDate(listing.createdAt)}</div>
           </div>
         </div>
@@ -116,8 +116,8 @@ const ListingCard: React.FC<{
 
       {/* Listing Text */}
       <div className="mb-4">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+        <div className="bg-surface-700/50 rounded-lg p-4 border border-surface-600/30">
+          <div className="whitespace-pre-wrap text-surface-200 leading-relaxed">
             {listing.listingText}
           </div>
         </div>
@@ -128,25 +128,25 @@ const ListingCard: React.FC<{
         <div className="flex space-x-3">
           <button
             onClick={() => onCopy(listing.listingText, listing.id)}
-            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg ${
               copiedId === listing.id
-                ? 'bg-green-600 text-white'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                ? 'bg-success-600 text-white'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
+            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200`}
           >
             {copiedId === listing.id ? 'Copied!' : 'Copy Listing'}
           </button>
 
           <button
             onClick={() => onInquiry(listing.id)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 transition-colors duration-200"
           >
             Inquire
           </button>
 
           <button
             onClick={() => onFavorite(listing.id)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-colors duration-200"
           >
             Favorite
           </button>
@@ -155,11 +155,11 @@ const ListingCard: React.FC<{
         <div className="flex items-center space-x-3">
           <button
             onClick={() => onDelete(listing.id)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-destructive-600 hover:bg-destructive-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-destructive-500 transition-colors duration-200"
           >
             Delete
           </button>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-surface-400">
             ID: {listing.id}
           </div>
         </div>
@@ -235,17 +235,37 @@ const ListingsDisplay: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="max-w-screen-lg mx-auto w-full min-h-[80vh] flex flex-col space-y-6 lg:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white font-display">Your Listings</h1>
+          <div className="w-24 sm:w-32 h-10 bg-surface-600 rounded-lg animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="card p-4 lg:p-6 animate-pulse">
+              <div className="h-5 lg:h-6 bg-surface-600 rounded mb-3 lg:mb-4"></div>
+              <div className="h-3 lg:h-4 bg-surface-600 rounded w-3/4 mb-2"></div>
+              <div className="h-3 lg:h-4 bg-surface-600 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
+      <div className="max-w-screen-lg mx-auto w-full min-h-[80vh] flex flex-col space-y-6 lg:space-y-8">
+        <div className="card p-4 lg:p-6">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-destructive-500/20 rounded-2xl flex items-center justify-center">
+              <span className="text-destructive-400 text-lg lg:text-xl">!</span>
+            </div>
+            <div>
+              <p className="text-destructive-400 font-medium">{error}</p>
+              <p className="text-surface-400 text-sm">Please try refreshing the page</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -253,23 +273,30 @@ const ListingsDisplay: React.FC = () => {
 
   if (listings.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No listings yet</h3>
-          <p className="text-gray-500">Create your first property to generate a listing.</p>
+      <div className="max-w-screen-lg mx-auto w-full min-h-[80vh] flex flex-col space-y-6 lg:space-y-8">
+        <div className="card p-8 lg:p-16 text-center">
+          <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+            <span className="text-primary-400 text-2xl lg:text-3xl">📄</span>
+          </div>
+          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-3 lg:mb-4">No listings yet</h2>
+          <p className="text-surface-400 text-base lg:text-lg mb-6 lg:mb-8 max-w-md mx-auto">
+            Create your first property to generate a listing. Your AI-generated listings will appear here.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Your Listings</h2>
-        <p className="text-gray-600 mt-1">Manage and copy your AI-generated property listings</p>
+    <div className="max-w-screen-lg mx-auto w-full min-h-[80vh] flex flex-col space-y-6 lg:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white font-display">Your Listings</h1>
+          <p className="text-base lg:text-lg text-surface-300">Manage and copy your AI-generated property listings</p>
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-6">
         {listings.map((listing) => (
           <ListingCard
             key={listing.id}

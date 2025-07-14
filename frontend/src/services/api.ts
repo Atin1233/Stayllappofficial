@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3002/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -60,7 +60,7 @@ export const listingAPI = {
   getAll: () => api.get('/listings'),
   getById: (id: string) => api.get(`/listings/${id}`),
   create: (listingData: any) => api.post('/listings', listingData),
-  generateListing: (propertyId: string) => api.post(`/listings/generate-listing`, { propertyId }),
+  generateListing: (propertyId: string, userId: string) => api.post(`/listings/generate-listing`, { propertyId, userId }),
   delete: (id: string) => api.delete(`/listings/${id}`),
 };
 
@@ -79,4 +79,4 @@ export const analyticsAPI = {
   getDashboardSummary: () => api.get('/analytics/summary')
 };
 
-export default api; 
+export default api;

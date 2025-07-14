@@ -1,8 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { propertyAPI, listingAPI } from '../services/api';
 import { Toaster, toast } from 'react-hot-toast';
 import { saveAs } from 'file-saver';
 import { type Property as PropertyModel } from '../../../src/models/Property';
+import {
+  PlusIcon,
+  TrashIcon,
+  PencilIcon,
+  DocumentTextIcon,
+  PhotoIcon,
+  EyeIcon,
+  CheckIcon,
+  XMarkIcon,
+  ArrowDownTrayIcon,
+  FunnelIcon,
+  HomeIcon
+} from '@heroicons/react/24/outline';
 
 // Combine the imported model with the ID since the ID comes from the store, not the model schema
 type Property = PropertyModel & { id: string };
@@ -12,15 +26,15 @@ type EditFormState = Omit<Partial<Property>, 'amenities' | 'photos'> & {
   photos: string; // Stored as a comma-separated string for the form
 };
 
-type PhotoAnalysisResult = {
+interface PhotoAnalysisResult {
   overallFeedback: string;
   suggestions: string[];
   missingPhotos: string[];
-  photoSpecificFeedback: {
+  photoSpecificFeedback: Array<{
     photoUrl: string;
     feedback: string;
-  }[];
-};
+  }>;
+}
 
 const PropertyManagement: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -144,7 +158,14 @@ const PropertyManagement: React.FC = () => {
     setGeneratingId(propertyId);
     setGenerateError('');
     try {
-      await listingAPI.generateListing(propertyId);
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.id;
+      if (!userId) {
+        setGenerateError('User ID not found. Please log in again.');
+        setGeneratingId(null);
+        return;
+      }
+      await listingAPI.generateListing(propertyId, userId);
       // Only update state if the component is still mounted
       if (generatingId === propertyId) {
         alert('Listing generated! Check the listings tab.');
@@ -240,364 +261,460 @@ const PropertyManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="max-w-screen-lg mx-auto w-full min-h-[80vh] flex flex-col space-y-6 lg:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white font-display">Manage Properties</h1>
+          <div className="flex items-center space-x-4">
+            <div className="w-24 sm:w-32 h-10 bg-surface-600 rounded-lg animate-pulse"></div>
+            <div className="w-24 sm:w-32 h-10 bg-surface-600 rounded-lg animate-pulse"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card p-4 lg:p-6 animate-pulse">
+              <div className="h-5 lg:h-6 bg-surface-600 rounded mb-3 lg:mb-4"></div>
+              <div className="h-3 lg:h-4 bg-surface-600 rounded w-3/4 mb-2"></div>
+              <div className="h-3 lg:h-4 bg-surface-600 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Manage Properties</h2>
-          <div className="flex space-x-2">
-            {selectedProperties.length > 0 && (
-              <button
-                onClick={handleBulkDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Delete Selected ({selectedProperties.length})
-              </button>
-            )}
+    <div className="max-w-screen-lg mx-auto w-full min-h-[80vh] flex flex-col space-y-6 lg:space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white font-display">Manage Properties</h1>
+          <p className="text-base lg:text-lg text-surface-300">View and manage your property portfolio</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+          {selectedProperties.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-destructive-500 text-destructive-400 rounded-lg hover:bg-destructive-500/10 focus:outline-none focus:ring-2 focus:ring-destructive-500 focus:ring-offset-2 transition-colors duration-200 text-sm"
+            >
+              <TrashIcon className="h-4 w-4 mr-2" />
+              <span>Delete ({selectedProperties.length})</span>
+            </button>
+          )}
+          <div className="flex items-center space-x-2">
             <select
               value={exportFormat}
               onChange={e => setExportFormat(e.target.value as 'csv' | 'json')}
-              className="border border-gray-300 rounded-md px-2 py-1 mr-2"
+              className="px-3 py-2 sm:px-4 sm:py-2 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             >
               <option value="csv">CSV</option>
-              <option value="json">JSON (Syndication)</option>
+              <option value="json">JSON</option>
             </select>
             <button
               onClick={handleExportFormat}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-surface-700/50 border border-surface-600/50 text-white rounded-lg hover:bg-surface-600/50 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors duration-200 text-sm"
             >
-              Export {selectedProperties.length > 0 ? `(${selectedProperties.length})` : 'All'} as {exportFormat.toUpperCase()}
+              <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+              <span>Export {selectedProperties.length > 0 ? `(${selectedProperties.length})` : 'All'}</span>
             </button>
           </div>
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {properties.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No properties found. Add your first property to get started!</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center p-4 border-b">
-              <input
-                type="checkbox"
-                onChange={handleSelectAll}
-                checked={selectedProperties.length === properties.length && properties.length > 0}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label className="ml-3 block text-sm font-medium text-gray-700">Select All</label>
+      {error && (
+        <div className="card p-4 lg:p-6">
+          <div className="flex items-center space-x-3 lg:space-x-4">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-destructive-500/20 rounded-2xl flex items-center justify-center">
+              <XMarkIcon className="h-5 w-5 lg:h-6 lg:w-6 text-destructive-400" />
             </div>
-            {properties.map((property) => (
-              <div key={property.id} className="border border-gray-200 rounded-lg p-6 flex items-start">
+            <div>
+              <p className="text-destructive-400 font-medium">{error}</p>
+              <p className="text-surface-400 text-sm">Please try refreshing the page</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {properties.length === 0 ? (
+        <div className="card p-8 lg:p-16 text-center">
+          <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+            <PlusIcon className="h-10 w-10 lg:h-12 lg:w-12 text-primary-400" />
+          </div>
+          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-3 lg:mb-4">No properties yet</h2>
+          <p className="text-surface-400 text-base lg:text-lg mb-6 lg:mb-8 max-w-md mx-auto">
+            Get started by adding your first property to your portfolio. You'll be able to manage listings, track analytics, and more.
+          </p>
+          <Link
+            to="/add-property"
+            className="inline-flex items-center px-4 py-3 lg:px-6 lg:py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+          >
+            <PlusIcon className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+            <span>Add New Property</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-6 lg:space-y-8">
+          {/* Select All Controls */}
+          <div className="card p-4 lg:p-6">
+            <div className="flex items-center space-x-3 lg:space-x-4">
+              <label className="flex items-center space-x-2 lg:space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={selectedProperties.includes(property.id)}
-                  onChange={() => handleSelectProperty(property.id)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mt-1"
+                  onChange={handleSelectAll}
+                  checked={selectedProperties.length === properties.length && properties.length > 0}
+                  className="w-4 h-4 lg:w-5 lg:h-5 text-primary-600 bg-surface-700 border-surface-600 rounded-lg focus:ring-primary-500 focus:ring-2"
                 />
-                <div className="ml-4 flex-grow">
-                  {editingPropertyId === property.id ? (
-                    <form onSubmit={handleEditSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Title</label>
-                          <input
-                            type="text"
-                            name="title"
-                            value={editForm.title}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Property Type</label>
-                          <select
-                            name="propertyType"
-                            value={editForm.propertyType}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                          >
-                            <option value="any">Any</option>
-                            <option value="house">House</option>
-                            <option value="apartment">Apartment</option>
-                            <option value="townhouse">Townhouse</option>
-                            <option value="condo">Condo</option>
-                            <option value="cooperative">Cooperative</option>
-                            <option value="mobile_home">Mobile Home</option>
-                            <option value="planned_development">Planned Development</option>
-                            <option value="multiplex">Multiplex</option>
-                            <option value="duplex">Duplex</option>
-                            <option value="triplex">Triplex</option>
-                            <option value="four_plex">Four Plex</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </div>
-                      </div>
+                <span className="text-white font-medium text-sm lg:text-base">Select All Properties</span>
+              </label>
+              {selectedProperties.length > 0 && (
+                <span className="text-surface-400 text-xs lg:text-sm">
+                  {selectedProperties.length} of {properties.length} selected
+                </span>
+              )}
+            </div>
+          </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Address</label>
-                          <input
-                            type="text"
-                            name="address"
-                            value={editForm.address}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">City</label>
-                          <input
-                            type="text"
-                            name="city"
-                            value={editForm.city}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">State</label>
-                          <input
-                            type="text"
-                            name="state"
-                            value={editForm.state}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            required
-                          />
-                        </div>
-                      </div>
+          {/* Properties Grid - Responsive layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+            {properties.map((property) => (
+              <div key={property.id} className="card p-6 group hover:scale-[1.02] transition-all duration-300">
+                {/* Property Header */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedProperties.includes(property.id)}
+                      onChange={() => handleSelectProperty(property.id)}
+                      className="w-5 h-5 text-primary-600 bg-surface-700 border-surface-600 rounded-lg focus:ring-primary-500 focus:ring-2"
+                    />
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-2xl flex items-center justify-center">
+                      <HomeIcon className="h-6 w-6 text-primary-400" />
+                    </div>
+                  </div>
+                </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">ZIP</label>
-                          <input
-                            type="text"
-                            name="zip"
-                            value={editForm.zip}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Bedrooms</label>
-                          <input
-                            type="number"
-                            name="numberOfBedrooms"
-                            value={editForm.numberOfBedrooms}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            min="1"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Bathrooms</label>
-                          <input
-                            type="number"
-                            name="numberOfBathrooms"
-                            value={editForm.numberOfBathrooms}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            min="1"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Rent ($)</label>
-                          <input
-                            type="number"
-                            name="rent"
-                            value={editForm.rent}
-                            onChange={handleEditChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            min="0"
-                            step="0.01"
-                            required
-                          />
-                        </div>
-                      </div>
-
+                {editingPropertyId === property.id ? (
+                  <form onSubmit={handleEditSubmit} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea
-                          name="description"
-                          value={editForm.description}
+                        <label className="block text-sm font-medium text-surface-300 mb-2">Title</label>
+                        <input
+                          type="text"
+                          name="title"
+                          value={editForm.title}
                           onChange={handleEditChange}
-                          rows={3}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                           required
                         />
                       </div>
-
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            name="petFriendly"
-                            checked={editForm.petFriendly}
-                            onChange={handleEditChange}
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Pet Friendly</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            name="utilitiesIncluded"
-                            checked={editForm.utilitiesIncluded}
-                            onChange={handleEditChange}
-                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Utilities Included</span>
-                        </label>
-                      </div>
-
-                      <div className="flex justify-end space-x-3">
-                        <button
-                          type="button"
-                          onClick={() => setEditingPropertyId(null)}
-                          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">Type</label>
+                        <select
+                          name="propertyType"
+                          value={editForm.propertyType}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                         >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={saving}
-                          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                          {saving ? 'Saving...' : 'Save Changes'}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{property.title}</h3>
-                          <p className="text-gray-600">{property.address}, {property.city}, {property.state} {property.zip}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => setEditingPropertyId(property.id)}
-                            className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(property.id)}
-                            className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium">Type:</span> {property.propertyType}
-                        </div>
-                        <div>
-                          <span className="font-medium">Bedrooms:</span> {property.numberOfBedrooms}
-                        </div>
-                        <div>
-                          <span className="font-medium">Bathrooms:</span> {property.numberOfBathrooms}
-                        </div>
-                        <div>
-                          <span className="font-medium">Rent:</span> ${property.rent}/month
-                        </div>
-                      </div>
-
-                      <div className="mt-4 text-sm text-gray-600">
-                        <p>{property.description}</p>
-                      </div>
-
-                      <div className="mt-4 flex space-x-4 text-sm">
-                        {property.petFriendly && (
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded">Pet Friendly</span>
-                        )}
-                        {property.utilitiesIncluded && (
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">Utilities Included</span>
-                        )}
-                        <button
-                          onClick={() => handleGenerateListing(property.id)}
-                          disabled={generatingId === property.id}
-                          className="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 disabled:opacity-50"
-                        >
-                          {generatingId === property.id ? 'Generating...' : 'Generate Listing'}
-                        </button>
-                        {generateError && (
-                          <div className="text-red-600 mt-2">{generateError}</div>
-                        )}
-                        <button
-                          onClick={() => handleAnalyzePhotos(property.id)}
-                          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"
-                          disabled={analysisLoading && analyzingPropertyId === property.id}
-                        >
-                          {analysisLoading && analyzingPropertyId === property.id ? 'Analyzing...' : 'Analyze Photos'}
-                        </button>
+                          <option value="house">House</option>
+                          <option value="apartment">Apartment</option>
+                          <option value="townhouse">Townhouse</option>
+                          <option value="condo">Condo</option>
+                        </select>
                       </div>
                     </div>
-                  )}
-                </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-surface-300 mb-2">Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={editForm.address}
+                        onChange={handleEditChange}
+                        className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">City</label>
+                        <input
+                          type="text"
+                          name="city"
+                          value={editForm.city}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">State</label>
+                        <input
+                          type="text"
+                          name="state"
+                          value={editForm.state}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">ZIP</label>
+                        <input
+                          type="text"
+                          name="zip"
+                          value={editForm.zip}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">Bedrooms</label>
+                        <input
+                          type="number"
+                          name="numberOfBedrooms"
+                          value={editForm.numberOfBedrooms}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">Bathrooms</label>
+                        <input
+                          type="number"
+                          name="numberOfBathrooms"
+                          value={editForm.numberOfBathrooms}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-surface-300 mb-2">Rent ($)</label>
+                        <input
+                          type="number"
+                          name="rent"
+                          value={editForm.rent}
+                          onChange={handleEditChange}
+                          className="w-full px-4 py-3 bg-surface-700/50 border border-surface-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          min="0"
+                          step="0.01"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-6">
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          name="petFriendly"
+                          checked={editForm.petFriendly}
+                          onChange={handleEditChange}
+                          className="w-5 h-5 text-primary-600 bg-surface-700 border-surface-600 rounded-lg focus:ring-primary-500 focus:ring-2"
+                        />
+                        <span className="text-surface-300 text-sm">Pet Friendly</span>
+                      </label>
+                      <label className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          name="utilitiesIncluded"
+                          checked={editForm.utilitiesIncluded}
+                          onChange={handleEditChange}
+                          className="w-5 h-5 text-primary-600 bg-surface-700 border-surface-600 rounded-lg focus:ring-primary-500 focus:ring-2"
+                        />
+                        <span className="text-surface-300 text-sm">Utilities Included</span>
+                      </label>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setEditingPropertyId(null)}
+                        className="px-6 py-3 bg-surface-700/50 border border-surface-600/50 text-white rounded-lg hover:bg-surface-600/50 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors duration-200"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 transition-all duration-200"
+                      >
+                        {saving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline mr-2"></div>
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckIcon className="h-5 w-5 inline mr-2" />
+                            <span>Save Changes</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Property Details */}
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-white mb-2">{property.title}</h3>
+                        <p className="text-surface-400 text-sm">{property.address}, {property.city}, {property.state} {property.zip}</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-surface-400 text-sm">Type:</span>
+                          <span className="text-white font-medium capitalize">{property.propertyType}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-surface-400 text-sm">Bedrooms:</span>
+                          <span className="text-white font-medium">{property.numberOfBedrooms}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-surface-400 text-sm">Bathrooms:</span>
+                          <span className="text-white font-medium">{property.numberOfBathrooms}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-surface-400 text-sm">Rent:</span>
+                          <span className="text-white font-medium">${property.rent}/month</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {property.petFriendly && (
+                          <span className="bg-success-500/20 text-success-400 px-3 py-1 rounded-full text-xs font-medium">
+                            Pet Friendly
+                          </span>
+                        )}
+                        {property.utilitiesIncluded && (
+                          <span className="bg-primary-500/20 text-primary-400 px-3 py-1 rounded-full text-xs font-medium">
+                            Utilities Included
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Column - Action Buttons */}
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => handleGenerateListing(property.id)}
+                        disabled={generatingId === property.id}
+                        className="w-full inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 transition-all duration-200"
+                      >
+                        <DocumentTextIcon className="h-4 w-4 mr-2" />
+                        <span>{generatingId === property.id ? 'Generating...' : 'Generate Listing'}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleAnalyzePhotos(property.id)}
+                        className="w-full inline-flex items-center justify-center px-4 py-2 bg-surface-700/50 border border-surface-600/50 text-white font-medium rounded-lg hover:bg-surface-600/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
+                        disabled={analysisLoading && analyzingPropertyId === property.id}
+                      >
+                        <PhotoIcon className="h-4 w-4 mr-2" />
+                        <span>{analysisLoading && analyzingPropertyId === property.id ? 'Analyzing...' : 'Analyze Photos'}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setEditingPropertyId(property.id)}
+                        className="w-full inline-flex items-center justify-center px-4 py-2 bg-surface-700/50 border border-surface-600/50 text-white font-medium rounded-lg hover:bg-surface-600/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        <span>Edit Property</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDelete(property.id)}
+                        className="w-full inline-flex items-center justify-center px-4 py-2 border border-destructive-500 text-destructive-400 font-medium rounded-lg hover:bg-destructive-500/10 focus:outline-none focus:ring-2 focus:ring-destructive-500 focus:ring-offset-2 transition-colors duration-200"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        <span>Delete Property</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        )}
-      </div>
-      <Toaster position="bottom-right" />
+        </div>
+      )}
+
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1e293b',
+            color: '#f8fafc',
+            border: '1px solid #475569',
+            borderRadius: '12px',
+          },
+        }}
+      />
 
       {/* Analysis Section */}
       {analyzingPropertyId && (
-        <div className="mt-8 p-6 bg-gray-800 rounded-lg">
-            <h2 className="text-2xl font-bold mb-4">Photo Analysis</h2>
-            {analysisLoading && (
-                <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
-                    <p className="ml-4">Analyzing photos, this may take a moment...</p>
-                </div>
-            )}
-            {analysisResult && (
-                <div>
-                    <h3 className="text-xl font-semibold">Overall Feedback:</h3>
-                    <p className="text-gray-300 mb-4">{analysisResult.overallFeedback}</p>
-                    
-                    <h3 className="text-xl font-semibold">Suggestions:</h3>
-                    <ul className="list-disc list-inside text-gray-300 mb-4">
-                        {analysisResult.suggestions.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
+        <div className="card p-8">
+          <h2 className="text-2xl font-bold text-white mb-6">Photo Analysis</h2>
+          {analysisLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center space-x-4">
+                <div className="w-8 h-8 border-2 border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-surface-300">Analyzing photos, this may take a moment...</p>
+              </div>
+            </div>
+          )}
+          {analysisResult && (
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-4">Overall Feedback:</h3>
+                <p className="text-surface-300 leading-relaxed">{analysisResult.overallFeedback}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-4">Suggestions:</h3>
+                <ul className="space-y-2">
+                  {analysisResult.suggestions.map((s, i) => (
+                    <li key={i} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-primary-400 rounded-full mt-2 flex-shrink-0"></div>
+                      <span className="text-surface-300">{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                    <h3 className="text-xl font-semibold">Missing Photo Types:</h3>
-                    <ul className="list-disc list-inside text-gray-300 mb-4">
-                        {analysisResult.missingPhotos.map((p, i) => <li key={i}>{p}</li>)}
-                    </ul>
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-4">Missing Photo Types:</h3>
+                <ul className="space-y-2">
+                  {analysisResult.missingPhotos.map((p, i) => (
+                    <li key={i} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-warning-400 rounded-full mt-2 flex-shrink-0"></div>
+                      <span className="text-surface-300">{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                    <h3 className="text-xl font-semibold">Photo-Specific Feedback:</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                        {analysisResult.photoSpecificFeedback.map((p, i) => (
-                            <div key={i} className="bg-gray-700 p-4 rounded">
-                                <img src={p.photoUrl} alt="Analyzed property" className="w-full h-48 object-cover rounded-md mb-2"/>
-                                <p>{p.feedback}</p>
-                            </div>
-                        ))}
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-4">Photo-Specific Feedback:</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {analysisResult.photoSpecificFeedback.map((p, i) => (
+                    <div key={i} className="card p-4">
+                      <img src={p.photoUrl} alt="Analyzed property" className="w-full h-48 object-cover rounded-xl mb-4"/>
+                      <p className="text-surface-300 text-sm">{p.feedback}</p>
                     </div>
+                  ))}
                 </div>
-            )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

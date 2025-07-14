@@ -58,11 +58,15 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ onPropertyCreated }) => {
       return;
     }
 
-    const squareFootage = formData.squareFootage ? parseInt(formData.squareFootage, 10) : undefined;
-    if (formData.squareFootage && (isNaN(squareFootage) || squareFootage <= 0)) {
+    let squareFootage: number | undefined = undefined;
+    if (formData.squareFootage) {
+      const parsedSqft = parseInt(formData.squareFootage, 10);
+      if (isNaN(parsedSqft) || parsedSqft <= 0) {
         setError('Please enter a valid square footage.');
         setLoading(false);
         return;
+      }
+      squareFootage = parsedSqft;
     }
 
     try {
@@ -85,7 +89,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ onPropertyCreated }) => {
         utilitiesIncluded: formData.utilitiesIncluded,
       };
 
-      if (squareFootage && !isNaN(squareFootage)) {
+      if (typeof squareFootage === 'number') {
         propertyData.squareFootage = squareFootage;
       }
 
@@ -98,8 +102,14 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ onPropertyCreated }) => {
 
       // Try to generate listing (optional - don't fail if this doesn't work)
       try {
-        await listingAPI.generateListing(propertyId);
-        setSuccess('Property created and listing generated successfully!');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user.id;
+        if (!userId) {
+          setSuccess('Property created successfully! (User ID not found, listing not generated)');
+        } else {
+          await listingAPI.generateListing(propertyId, userId);
+          setSuccess('Property created and listing generated successfully!');
+        }
       } catch (listingError: any) {
         console.warn('Listing generation failed:', listingError);
         setSuccess('Property created successfully! (Listing generation failed - you can generate it later)');

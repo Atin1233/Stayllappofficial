@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import {
-  addProperty,
   getAllProperties as getStoredProperties,
   getPropertyById,
   deletePropertyById,
@@ -10,6 +9,9 @@ import {
 import { PropertyCreate, PropertyUpdateSchema, PropertyCreateInputSchema } from '../models/Property';
 import { analyzePropertyPhotos as analyzePhotosService, analyzeRentPrice } from '../services/vertexai.service';
 import { Parser } from 'json2csv';
+import { PropertyRepository } from '../repositories/property.repository';
+
+const propertyRepository = new PropertyRepository();
 
 /**
  * Express route handler for creating a new property
@@ -32,9 +34,11 @@ export async function createProperty(req: Request, res: Response): Promise<void>
     const validated: PropertyCreate = PropertyCreateInputSchema.parse(propertyData);
     console.log('Validated property data:', validated);
 
-    // 3. Store the property in memory
-    const newProperty = addProperty(validated);
-    console.log('Created property:', newProperty);
+    // 3. Store the property in the database (not in memory)
+    // TODO: Replace with actual userId from auth if available
+    const userId = req.user?.userId || 'cmcjyxggr0000rfbgdlf90mak'; // Test user ID
+    const newProperty = await propertyRepository.createProperty(validated, userId);
+    console.log('Created property in DB:', newProperty);
 
     // 4. Return the created property
     res.status(201).json({

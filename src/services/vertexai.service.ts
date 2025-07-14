@@ -8,21 +8,66 @@ const model = 'gemini-2.0-flash-lite'; // Google's general-purpose text generati
 const vertexAI = new VertexAI({ project, location });
 
 export async function generateListingWithVertexAI(prompt: string): Promise<string> {
+  // Create a promise with a timeout
+  const timeoutPromise = new Promise<string>((_, reject) => {
+    setTimeout(() => reject(new Error("VertexAI API request timed out")), 10000); // 10 second timeout
+  });
+  
   try {
-    const generativeModel = vertexAI.getGenerativeModel({ model });
-    const result = await generativeModel.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
-    const responseText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate listing at this time.';
+    // Use Promise.race to race between the API call and the timeout
+    const apiPromise = async () => {
+      try {
+        const generativeModel = vertexAI.getGenerativeModel({ model });
+        const result = await generativeModel.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }]
+        });
+        const responseText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate listing at this time.';
+        
+        // Remove markdown bolding (**) from the response
+        return responseText.replace(/\*\*/g, '');
+      } catch (error) {
+        console.error('Vertex AI Error:', error);
+        throw error;
+      }
+    };
     
-    // Remove markdown bolding (**) from the response
-    const cleanedText = responseText.replace(/\*\*/g, '');
-    
-    return cleanedText;
+    return await Promise.race([apiPromise(), timeoutPromise]);
   } catch (error) {
-    console.error('Vertex AI Error:', error);
-    return 'Unable to generate listing at this time.';
+    console.error('Vertex AI Error with timeout:', error);
+    return generateFallbackListing(prompt);
   }
+}
+
+// Generate a fallback listing when VertexAI is unavailable
+function generateFallbackListing(prompt: string): string {
+  console.log('Using fallback listing generator due to VertexAI error');
+  
+  // Extract basic information from the prompt
+  const bedroomMatch = prompt.match(/(\d+)\s*bedroom/i);
+  const bathroomMatch = prompt.match(/(\d+(?:\.\d+)?)\s*bath/i);
+  const locationMatch = prompt.match(/Located at\s+([^-]+)/i);
+  const rentMatch = prompt.match(/\$(\d+(?:,\d+)?)/i);
+  
+  const bedrooms = bedroomMatch ? bedroomMatch[1] : '?';
+  const bathrooms = bathroomMatch ? bathroomMatch[1] : '?';
+  const location = locationMatch ? locationMatch[1].trim() : 'this great location';
+  const rent = rentMatch ? rentMatch[1] : '?';
+  
+  // Generate a basic professional listing
+  return `LUXURY ${bedrooms} BEDROOM, ${bathrooms} BATHROOM HOME AVAILABLE NOW!
+
+Experience elevated living in this spacious ${bedrooms} bedroom, ${bathrooms} bathroom property located at ${location}. This meticulously maintained home offers modern features and premium amenities for discerning residents.
+
+Priced at just $${rent}/month, this property won't be available for long! Featuring high-end finishes, spacious rooms, and an ideal location, this home offers exceptional value and comfort.
+
+Key features include:
+- ${bedrooms} spacious bedrooms
+- ${bathrooms} well-appointed bathrooms
+- Modern kitchen with premium appliances
+- Elegant living spaces with abundant natural light
+- Convenient location with easy access to amenities
+
+Contact us today to schedule a viewing of this exceptional property before it's gone!`;
 }
 
 export interface RentAnalysisResult {

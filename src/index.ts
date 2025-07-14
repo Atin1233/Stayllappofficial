@@ -7,7 +7,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import { checkDatabaseConnection, initializeDatabase } from './services/database.service';
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
