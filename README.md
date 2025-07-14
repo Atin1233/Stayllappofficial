@@ -217,4 +217,4 @@ For support and questions, please open an issue in the GitHub repository.
 
 ---
 
-**Stayll** - Making property management simple and efficient. 
+**Stayll** - Making property management simple and efficient. # stayllapp
