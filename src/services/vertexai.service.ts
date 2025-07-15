@@ -21,10 +21,25 @@ export async function generateListingWithVertexAI(prompt: string): Promise<strin
         const result = await generativeModel.generateContent({
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
-        const responseText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate listing at this time.';
+        // Use optional chaining and fallback
+        let responseText = 'Unable to generate listing at this time.';
+        if (
+          result &&
+          result.response &&
+          Array.isArray(result.response.candidates) &&
+          result.response.candidates[0] &&
+          result.response.candidates[0].content &&
+          typeof result.response.candidates[0].content === 'object' &&
+          'parts' in result.response.candidates[0].content &&
+          Array.isArray((result.response.candidates[0].content as any).parts) &&
+          (result.response.candidates[0].content as any).parts[0] &&
+          typeof (result.response.candidates[0].content as any).parts[0].text === 'string'
+        ) {
+          responseText = (result.response.candidates[0].content as any).parts[0].text;
+        }
         
         // Remove markdown bolding (**) from the response
-        return responseText.replace(/\*\*/g, '');
+        return typeof responseText === 'string' ? responseText.replace(/\*\*/g, '') : 'Unable to generate listing at this time.';
       } catch (error) {
         console.error('Vertex AI Error:', error);
         throw error;

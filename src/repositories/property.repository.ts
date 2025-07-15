@@ -136,6 +136,7 @@ export class PropertyRepository {
       if (typeof updateData.propertyType !== 'undefined') updateFields.propertyType = updateData.propertyType?.toUpperCase();
       if (typeof updateData.petFriendly !== 'undefined') updateFields.petFriendly = updateData.petFriendly;
       if (typeof updateData.utilitiesIncluded !== 'undefined') updateFields.utilitiesIncluded = updateData.utilitiesIncluded;
+      // Do not add 'id' to updateFields as it is not allowed by the type
       const updatedProperty = await prisma.property.update({
         where: { 
           id,

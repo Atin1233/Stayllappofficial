@@ -140,12 +140,17 @@ export async function generateListing(req: Request, res: Response): Promise<void
     // Before AI call
     console.log('DEBUG: Before generateListingWithVertexAI');
     // Add timeout to AI call
-    let listingText;
+    let listingText: string;
     try {
-      listingText = await Promise.race([
+      const result = await Promise.race([
         generateListingWithVertexAI(prompt),
         new Promise((_, reject) => setTimeout(() => reject(new Error('VertexAI service timeout')), 15000))
       ]);
+      if (typeof result === 'string') {
+        listingText = result;
+      } else {
+        throw new Error('AI service did not return a string');
+      }
       console.log('DEBUG: After generateListingWithVertexAI');
     } catch (aiError) {
       const err = aiError instanceof Error ? aiError : new Error(String(aiError));
@@ -159,8 +164,8 @@ export async function generateListing(req: Request, res: Response): Promise<void
       try {
         const newListing = await listingRepository.createListing({
           listingText,
-          propertyId,
-          userId,
+          propertyId: propertyId || '',
+          userId: userId || '',
         });
         // After DB listing creation
         console.log(`DEBUG: Listing created successfully with ID: ${newListing.id}`);
@@ -172,7 +177,7 @@ export async function generateListing(req: Request, res: Response): Promise<void
         console.error('Database listing creation error:', error);
         // If database creation fails, fall back to in-memory listing
         console.log(`DEBUG: Database listing creation failed, falling back to in-memory listing`);
-        const inMemoryListing = createInMemoryListing(listingText, propertyId, userId);
+        const inMemoryListing = createInMemoryListing(listingText, propertyId || '', userId || '');
         res.status(201).json({
           success: true,
           listing: inMemoryListing,
@@ -181,7 +186,7 @@ export async function generateListing(req: Request, res: Response): Promise<void
     } else {
       // If we're using an in-memory property, create an in-memory listing
       console.log(`DEBUG: Creating in-memory listing for property: ${propertyId}, user: ${userId}`);
-      const inMemoryListing = createInMemoryListing(listingText, propertyId, userId);
+      const inMemoryListing = createInMemoryListing(listingText, propertyId || '', userId || '');
       res.status(201).json({
         success: true,
         listing: inMemoryListing,
@@ -202,12 +207,13 @@ function createInMemoryListing(listingText: string, propertyId: string, userId: 
   // Ensure propertyId is a string
   const safePropertyId = propertyId || '';
   const property = getPropertyById(safePropertyId);
+  const { id, ...propertyWithoutId } = property || {};
   const listing: Listing = {
     id: listingId,
     listingText,
     propertyId: safePropertyId,
     createdAt: new Date(),
-    propertyData: property ? { ...property, isActive: true } : undefined
+    propertyData: property ? { ...propertyWithoutId, isActive: true } : undefined
   };
   // Store the listing in memory
   addListing(listing);
@@ -234,7 +240,7 @@ export async function getAllListings(req: Request, res: Response): Promise<void>
 export async function deleteListing(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   try {
-    const deletedListing = await listingRepository.delete(id);
+    const deletedListing = await listingRepository.delete(id || '');
     if (deletedListing) {
       res.status(200).json({ success: true, message: 'Listing deleted successfully.' });
     } else {
