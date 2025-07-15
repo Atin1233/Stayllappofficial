@@ -8,6 +8,7 @@ import { z } from 'zod';
  */
 export const PropertySchema = z.object({
   // Basic property identification
+  id: z.string().optional(),
   title: z.string().min(1, 'Property title is required').max(100, 'Title must be less than 100 characters'),
   
   // Location information
