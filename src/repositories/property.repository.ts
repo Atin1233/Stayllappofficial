@@ -102,10 +102,7 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => {
-      const { id, ...propertyWithoutId } = property;
-      return this.convertPrismaPropertyToProperty(propertyWithoutId);
-    });
+    return properties.map(property => this.convertPrismaPropertyToProperty(property));
   }
 
   /**
@@ -216,10 +213,7 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => {
-      const { id, ...propertyWithoutId } = property;
-      return this.convertPrismaPropertyToProperty(propertyWithoutId);
-    });
+    return properties.map(property => this.convertPrismaPropertyToProperty(property));
   }
 
   /**
