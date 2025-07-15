@@ -21,25 +21,16 @@ export class PropertyRepository {
       throw new Error('Missing required fields');
     }
 
+    // Remove 'id' if present
+    const { id, ...propertyDataWithoutId } = propertyData as any;
+
     // Create property in database
     const newProperty = await prisma.property.create({
       data: {
-        title: propertyData.title,
-        address: propertyData.address,
-        city: propertyData.city,
-        state: propertyData.state,
-        zip: propertyData.zip,
-        numberOfBedrooms: propertyData.numberOfBedrooms,
-        numberOfBathrooms: propertyData.numberOfBathrooms,
-        squareFootage: propertyData.squareFootage || null,
-        rent: propertyData.rent,
-        description: propertyData.description,
+        ...propertyDataWithoutId,
         amenities: JSON.stringify(propertyData.amenities), // Convert array to JSON string
-        availabilityDate: propertyData.availabilityDate,
         photos: JSON.stringify(propertyData.photos), // Convert array to JSON string
         propertyType: propertyData.propertyType?.toUpperCase() as any || 'APARTMENT',
-        petFriendly: propertyData.petFriendly || false,
-        utilitiesIncluded: propertyData.utilitiesIncluded || false,
         userId: userId
       }
     });
@@ -111,7 +102,10 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+    return properties.map(property => {
+      const { id, ...propertyWithoutId } = property;
+      return this.convertPrismaPropertyToProperty(propertyWithoutId);
+    });
   }
 
   /**
@@ -136,7 +130,8 @@ export class PropertyRepository {
       if (typeof updateData.propertyType !== 'undefined') updateFields.propertyType = updateData.propertyType?.toUpperCase();
       if (typeof updateData.petFriendly !== 'undefined') updateFields.petFriendly = updateData.petFriendly;
       if (typeof updateData.utilitiesIncluded !== 'undefined') updateFields.utilitiesIncluded = updateData.utilitiesIncluded;
-      // Do not add 'id' to updateFields as it is not allowed by the type
+      // Remove 'id' if present
+      if ('id' in updateFields) delete updateFields.id;
       const updatedProperty = await prisma.property.update({
         where: { 
           id,
@@ -221,7 +216,10 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+    return properties.map(property => {
+      const { id, ...propertyWithoutId } = property;
+      return this.convertPrismaPropertyToProperty(propertyWithoutId);
+    });
   }
 
   /**
