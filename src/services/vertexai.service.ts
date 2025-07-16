@@ -7,6 +7,39 @@ const model = 'gemini-2.0-flash-lite'; // Google's general-purpose text generati
 
 const vertexAI = new VertexAI({ project, location });
 
+// Place safeGetText at the top of the file
+function safeGetText(result: any): string {
+  if (
+    result &&
+    result.response &&
+    Array.isArray(result.response.candidates) &&
+    result.response.candidates.length > 0
+  ) {
+    const candidate = result.response.candidates[0];
+    if (
+      candidate &&
+      candidate.content &&
+      typeof candidate.content === 'object' &&
+      candidate.content !== null &&
+      'parts' in candidate.content
+    ) {
+      const parts = (candidate.content as { parts?: any[] }).parts;
+      if (
+        Array.isArray(parts) &&
+        parts.length > 0 &&
+        parts[0] &&
+        typeof parts[0] === 'object' &&
+        parts[0] !== null &&
+        'text' in parts[0] &&
+        typeof parts[0].text === 'string'
+      ) {
+        return parts[0].text;
+      }
+    }
+  }
+  return '';
+}
+
 export async function generateListingWithVertexAI(prompt: string): Promise<string> {
   // Create a promise with a timeout
   const timeoutPromise = new Promise<string>((_, reject) => {
@@ -149,35 +182,7 @@ Return only the JSON response, no additional text.`;
       contents: [{ role: 'user', parts: [{ text: prompt }] }]
     });
     
-    let responseText = '';
-    if (
-      result &&
-      result.response &&
-      Array.isArray(result.response.candidates) &&
-      result.response.candidates.length > 0
-    ) {
-      const candidate = result.response.candidates[0];
-      if (
-        candidate &&
-        candidate.content &&
-        typeof candidate.content === 'object' &&
-        candidate.content !== null &&
-        'parts' in candidate.content
-      ) {
-        const parts = (candidate.content as { parts?: any[] }).parts;
-        if (
-          Array.isArray(parts) &&
-          parts.length > 0 &&
-          parts[0] &&
-          typeof parts[0] === 'object' &&
-          parts[0] !== null &&
-          'text' in parts[0] &&
-          typeof parts[0].text === 'string'
-        ) {
-          responseText = parts[0].text;
-        }
-      }
-    }
+    let responseText = safeGetText(result);
     
     // Clean the response text by removing markdown code block formatting
     const cleanedResponse = responseText
@@ -193,11 +198,11 @@ Return only the JSON response, no additional text.`;
     console.error('Rent Analysis Error:', error);
     
     // Fallback analysis
-    const baseRent = (propertyData?.numberOfBedrooms ?? 0) * 800 + (propertyData?.numberOfBathrooms ?? 0) * 200;
-    const locationMultiplier = getLocationMultiplier(propertyData?.city ?? '', propertyData?.state ?? '');
-    const amenitiesBonus = (propertyData?.amenities?.length ?? 0) * 50;
-    const utilitiesBonus = propertyData?.utilitiesIncluded ? 100 : 0;
-    const petBonus = propertyData?.petFriendly ? 50 : 0;
+    const baseRent = ((propertyData as any)?.numberOfBedrooms ?? 0) * 800 + ((propertyData as any)?.numberOfBathrooms ?? 0) * 200;
+    const locationMultiplier = getLocationMultiplier((propertyData as any)?.city ?? '', (propertyData as any)?.state ?? '');
+    const amenitiesBonus = ((propertyData as any)?.amenities?.length ?? 0) * 50;
+    const utilitiesBonus = (propertyData as any)?.utilitiesIncluded ? 100 : 0;
+    const petBonus = (propertyData as any)?.petFriendly ? 50 : 0;
     
     const suggestedRent = Math.round((baseRent + amenitiesBonus + utilitiesBonus + petBonus) * locationMultiplier);
     
@@ -291,35 +296,7 @@ export async function analyzePropertyPhotos(photoUrls: string[]): Promise<PhotoA
     };
 
     const result = await generativeModel.generateContent(request);
-    let responseText = '';
-    if (
-      result &&
-      result.response &&
-      Array.isArray(result.response.candidates) &&
-      result.response.candidates.length > 0
-    ) {
-      const candidate = result.response.candidates[0];
-      if (
-        candidate &&
-        candidate.content &&
-        typeof candidate.content === 'object' &&
-        candidate.content !== null &&
-        'parts' in candidate.content
-      ) {
-        const parts = (candidate.content as { parts?: any[] }).parts;
-        if (
-          Array.isArray(parts) &&
-          parts.length > 0 &&
-          parts[0] &&
-          typeof parts[0] === 'object' &&
-          parts[0] !== null &&
-          'text' in parts[0] &&
-          typeof parts[0].text === 'string'
-        ) {
-          responseText = parts[0].text;
-        }
-      }
-    }
+    let responseText = safeGetText(result);
     const cleanedResponse = responseText
       .replace(/```json\s*/g, '')
       .replace(/```\s*$/g, '')
