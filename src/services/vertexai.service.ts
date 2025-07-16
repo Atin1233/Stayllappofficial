@@ -150,15 +150,31 @@ Return only the JSON response, no additional text.`;
     });
     
     let responseText = '';
-    if (result && result.response) {
-      const candidates = result.response.candidates;
-      if (Array.isArray(candidates) && candidates.length > 0) {
-        const candidate = candidates[0];
-        if (candidate && candidate.content && 'parts' in candidate.content) {
-          const parts = (candidate.content as { parts?: any }).parts;
-          if (Array.isArray(parts) && parts.length > 0 && typeof parts[0].text === 'string') {
-            responseText = parts[0].text;
-          }
+    if (
+      result &&
+      result.response &&
+      Array.isArray(result.response.candidates) &&
+      result.response.candidates.length > 0
+    ) {
+      const candidate = result.response.candidates[0];
+      if (
+        candidate &&
+        candidate.content &&
+        typeof candidate.content === 'object' &&
+        candidate.content !== null &&
+        'parts' in candidate.content
+      ) {
+        const parts = (candidate.content as { parts?: any[] }).parts;
+        if (
+          Array.isArray(parts) &&
+          parts.length > 0 &&
+          parts[0] &&
+          typeof parts[0] === 'object' &&
+          parts[0] !== null &&
+          'text' in parts[0] &&
+          typeof parts[0].text === 'string'
+        ) {
+          responseText = parts[0].text;
         }
       }
     }
@@ -276,15 +292,31 @@ export async function analyzePropertyPhotos(photoUrls: string[]): Promise<PhotoA
 
     const result = await generativeModel.generateContent(request);
     let responseText = '';
-    if (result && result.response) {
-      const candidates = result.response.candidates;
-      if (Array.isArray(candidates) && candidates.length > 0) {
-        const candidate = candidates[0];
-        if (candidate && candidate.content && 'parts' in candidate.content) {
-          const parts = (candidate.content as { parts?: any }).parts;
-          if (Array.isArray(parts) && parts.length > 0 && typeof parts[0].text === 'string') {
-            responseText = parts[0].text;
-          }
+    if (
+      result &&
+      result.response &&
+      Array.isArray(result.response.candidates) &&
+      result.response.candidates.length > 0
+    ) {
+      const candidate = result.response.candidates[0];
+      if (
+        candidate &&
+        candidate.content &&
+        typeof candidate.content === 'object' &&
+        candidate.content !== null &&
+        'parts' in candidate.content
+      ) {
+        const parts = (candidate.content as { parts?: any[] }).parts;
+        if (
+          Array.isArray(parts) &&
+          parts.length > 0 &&
+          parts[0] &&
+          typeof parts[0] === 'object' &&
+          parts[0] !== null &&
+          'text' in parts[0] &&
+          typeof parts[0].text === 'string'
+        ) {
+          responseText = parts[0].text;
         }
       }
     }
