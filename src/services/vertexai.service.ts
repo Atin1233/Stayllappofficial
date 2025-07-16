@@ -140,6 +140,15 @@ export async function analyzeRentPrice(propertyData: {
   petFriendly: boolean;
   utilitiesIncluded: boolean;
   currentRent?: number;
+} = {
+  numberOfBedrooms: 0,
+  numberOfBathrooms: 0,
+  city: '',
+  state: '',
+  propertyType: '',
+  amenities: [],
+  petFriendly: false,
+  utilitiesIncluded: false
 }): Promise<RentAnalysisResult> {
   try {
     const generativeModel = vertexAI.getGenerativeModel({ model });
@@ -196,25 +205,24 @@ Return only the JSON response, no additional text.`;
     return analysis;
   } catch (error) {
     console.error('Rent Analysis Error:', error);
-    
+
     // Fallback analysis
-    const safePropertyData = (propertyData || {}) as {
-      numberOfBedrooms?: number;
-      numberOfBathrooms?: number;
-      city?: string;
-      state?: string;
-      amenities?: any[];
-      utilitiesIncluded?: boolean;
-      petFriendly?: boolean;
-    };
-    const baseRent = (safePropertyData.numberOfBedrooms ?? 0) * 800 + (safePropertyData.numberOfBathrooms ?? 0) * 200;
-    const locationMultiplier = getLocationMultiplier(safePropertyData.city ?? '', safePropertyData.state ?? '');
-    const amenitiesBonus = (safePropertyData.amenities?.length ?? 0) * 50;
-    const utilitiesBonus = safePropertyData.utilitiesIncluded ? 100 : 0;
-    const petBonus = safePropertyData.petFriendly ? 50 : 0;
-    
+    const numberOfBedrooms = 0;
+    const numberOfBathrooms = 0;
+    const city = '';
+    const state = '';
+    const amenities: string[] = [];
+    const utilitiesIncluded = false;
+    const petFriendly = false;
+
+    const baseRent = numberOfBedrooms * 800 + numberOfBathrooms * 200;
+    const locationMultiplier = getLocationMultiplier(city, state);
+    const amenitiesBonus = amenities.length * 50;
+    const utilitiesBonus = utilitiesIncluded ? 100 : 0;
+    const petBonus = petFriendly ? 50 : 0;
+
     const suggestedRent = Math.round((baseRent + amenitiesBonus + utilitiesBonus + petBonus) * locationMultiplier);
-    
+
     return {
       suggestedRent,
       confidence: 'low',
