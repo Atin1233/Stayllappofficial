@@ -23,7 +23,7 @@ let properties: StoredProperty[] = [];
 export function addProperty(property: PropertyCreate): StoredProperty {
   const newProperty: StoredProperty = {
     ...property,
-    id: Math.random().toString(36).substr(2, 9), // Simple ID for now
+    id: property.id ?? Math.random().toString(36).substr(2, 9), // Ensure id is always a string
     createdAt: new Date()
   };
   
@@ -71,6 +71,7 @@ export function updatePropertyById(id: string, updates: Partial<PropertyCreate>)
   const updatedProperty: StoredProperty = {
     ...propertyToUpdate,
     ...updates,
+    id: propertyToUpdate.id // Always use the existing id, never allow undefined
   };
   
   properties = properties.map(p => (p.id === id ? updatedProperty : p));

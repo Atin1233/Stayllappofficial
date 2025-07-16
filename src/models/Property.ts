@@ -69,7 +69,15 @@ export const PropertySchema = z.object({
 /**
  * TypeScript type derived from the Zod schema
  */
-export type Property = z.infer<typeof PropertySchema>;
+export type Property = z.infer<typeof PropertySchema> & {
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    userType: string;
+  };
+};
 
 /**
  * Partial property type for updates
