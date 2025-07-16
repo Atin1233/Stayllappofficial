@@ -149,7 +149,15 @@ Return only the JSON response, no additional text.`;
       contents: [{ role: 'user', parts: [{ text: prompt }] }]
     });
     
-    const responseText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let responseText = '';
+    const candidates = result && result.response && Array.isArray(result.response.candidates) ? result.response.candidates : [];
+    if (candidates.length > 0) {
+      const content = candidates[0].content;
+      const parts = content && Array.isArray(content.parts) ? content.parts : [];
+      if (parts.length > 0 && typeof parts[0].text === 'string') {
+        responseText = parts[0].text;
+      }
+    }
     
     // Clean the response text by removing markdown code block formatting
     const cleanedResponse = responseText
@@ -165,11 +173,11 @@ Return only the JSON response, no additional text.`;
     console.error('Rent Analysis Error:', error);
     
     // Fallback analysis
-    const baseRent = propertyData.numberOfBedrooms * 800 + propertyData.numberOfBathrooms * 200;
-    const locationMultiplier = getLocationMultiplier(propertyData.city, propertyData.state);
-    const amenitiesBonus = propertyData.amenities.length * 50;
-    const utilitiesBonus = propertyData.utilitiesIncluded ? 100 : 0;
-    const petBonus = propertyData.petFriendly ? 50 : 0;
+    const baseRent = (propertyData?.numberOfBedrooms ?? 0) * 800 + (propertyData?.numberOfBathrooms ?? 0) * 200;
+    const locationMultiplier = getLocationMultiplier(propertyData?.city ?? '', propertyData?.state ?? '');
+    const amenitiesBonus = (propertyData?.amenities?.length ?? 0) * 50;
+    const utilitiesBonus = propertyData?.utilitiesIncluded ? 100 : 0;
+    const petBonus = propertyData?.petFriendly ? 50 : 0;
     
     const suggestedRent = Math.round((baseRent + amenitiesBonus + utilitiesBonus + petBonus) * locationMultiplier);
     
@@ -263,13 +271,19 @@ export async function analyzePropertyPhotos(photoUrls: string[]): Promise<PhotoA
     };
 
     const result = await generativeModel.generateContent(request);
-    const responseText = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+    let responseText = '';
+    const candidates = result && result.response && Array.isArray(result.response.candidates) ? result.response.candidates : [];
+    if (candidates.length > 0) {
+      const content = candidates[0].content;
+      const parts = content && Array.isArray(content.parts) ? content.parts : [];
+      if (parts.length > 0 && typeof parts[0].text === 'string') {
+        responseText = parts[0].text;
+      }
+    }
     const cleanedResponse = responseText
       .replace(/```json\s*/g, '')
       .replace(/```\s*$/g, '')
       .trim();
-
     return JSON.parse(cleanedResponse) as PhotoAnalysisResult;
 
   } catch (error) {

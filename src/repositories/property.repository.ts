@@ -230,7 +230,7 @@ export class PropertyRepository {
    * Handles null to undefined conversion and parses JSON fields
    */
   private convertPrismaPropertyToProperty(prismaProperty: any): Property {
-    return {
+    const base: any = {
       id: prismaProperty.id,
       title: prismaProperty.title,
       address: prismaProperty.address,
@@ -255,15 +255,16 @@ export class PropertyRepository {
       createdAt: prismaProperty.createdAt,
       updatedAt: prismaProperty.updatedAt,
       isActive: prismaProperty.isActive,
-      user: prismaProperty.user
-        ? {
-            id: prismaProperty.user.id,
-            email: prismaProperty.user.email,
-            firstName: prismaProperty.user.firstName,
-            lastName: prismaProperty.user.lastName,
-            userType: prismaProperty.user.userType?.toLowerCase() || 'landlord'
-          }
-        : undefined
     };
+    if (prismaProperty.user) {
+      base.user = {
+        id: prismaProperty.user.id,
+        email: prismaProperty.user.email,
+        firstName: prismaProperty.user.firstName,
+        lastName: prismaProperty.user.lastName,
+        userType: prismaProperty.user.userType?.toLowerCase() || 'landlord'
+      };
+    }
+    return base;
   }
 } 

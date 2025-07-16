@@ -76,7 +76,7 @@ export type Property = z.infer<typeof PropertySchema> & {
     firstName: string;
     lastName: string;
     userType: string;
-  };
+  } | undefined;
 };
 
 /**
