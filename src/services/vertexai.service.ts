@@ -198,11 +198,20 @@ Return only the JSON response, no additional text.`;
     console.error('Rent Analysis Error:', error);
     
     // Fallback analysis
-    const baseRent = ((propertyData as any)?.numberOfBedrooms ?? 0) * 800 + ((propertyData as any)?.numberOfBathrooms ?? 0) * 200;
-    const locationMultiplier = getLocationMultiplier((propertyData as any)?.city ?? '', (propertyData as any)?.state ?? '');
-    const amenitiesBonus = ((propertyData as any)?.amenities?.length ?? 0) * 50;
-    const utilitiesBonus = (propertyData as any)?.utilitiesIncluded ? 100 : 0;
-    const petBonus = (propertyData as any)?.petFriendly ? 50 : 0;
+    const safePropertyData = (propertyData || {}) as {
+      numberOfBedrooms?: number;
+      numberOfBathrooms?: number;
+      city?: string;
+      state?: string;
+      amenities?: any[];
+      utilitiesIncluded?: boolean;
+      petFriendly?: boolean;
+    };
+    const baseRent = (safePropertyData.numberOfBedrooms ?? 0) * 800 + (safePropertyData.numberOfBathrooms ?? 0) * 200;
+    const locationMultiplier = getLocationMultiplier(safePropertyData.city ?? '', safePropertyData.state ?? '');
+    const amenitiesBonus = (safePropertyData.amenities?.length ?? 0) * 50;
+    const utilitiesBonus = safePropertyData.utilitiesIncluded ? 100 : 0;
+    const petBonus = safePropertyData.petFriendly ? 50 : 0;
     
     const suggestedRent = Math.round((baseRent + amenitiesBonus + utilitiesBonus + petBonus) * locationMultiplier);
     
