@@ -98,7 +98,7 @@ function generateFallbackListing(prompt: string): string {
   
   const bedrooms = bedroomMatch ? bedroomMatch[1] : '?';
   const bathrooms = bathroomMatch ? bathroomMatch[1] : '?';
-  const location = locationMatch ? locationMatch[1].trim() : 'this great location';
+  const location = locationMatch?.[1]?.trim() ?? 'this great location';
   const rent = rentMatch ? rentMatch[1] : '?';
   
   // Generate a basic professional listing
