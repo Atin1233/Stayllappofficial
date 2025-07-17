@@ -5,6 +5,7 @@ import propertyRoutes from './routes/property.routes';
 import listingRoutes from './routes/listing.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import { checkDatabaseConnection, initializeDatabase } from './services/database.service';
+import { execSync } from 'child_process';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,8 +42,21 @@ app.use('*', (req, res) => {
   });
 });
 
+async function ensureDb() {
+  if (process.env.DATABASE_URL?.startsWith('file:/tmp/')) {
+    try {
+      execSync('npx prisma db push', { stdio: 'inherit' });
+      execSync('npx tsx prisma/seed.ts', { stdio: 'inherit' });
+      console.log('Database schema pushed and seeded.');
+    } catch (err) {
+      console.error('Failed to push schema or seed database:', err);
+    }
+  }
+}
+
 async function startServer() {
   try {
+    await ensureDb();
     console.log('Starting server...');
     
     // Initialize database connection
