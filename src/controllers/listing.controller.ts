@@ -136,4 +136,54 @@ export async function generateListing(req: Request, res: Response): Promise<void
       return;
     }
     const prompt = createListingPrompt(property);
-    console.log(`
+    console.log(prompt);
+    const generatedListing = await generateListingWithHuggingFace(prompt);
+    res.status(200).json({ success: true, listing: generatedListing });
+  } catch (error: any) {
+    console.error('Error generating listing:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to generate listing.' });
+  }
+}
+
+// Get all listings handler
+export async function getAllListings(req: Request, res: Response): Promise<void> {
+  try {
+    const listings = getStoredListings();
+    res.status(200).json({
+      success: true,
+      listings,
+      count: listings.length
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to retrieve listings.'
+    });
+  }
+}
+
+// Delete listing handler
+export async function deleteListing(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ success: false, error: 'Listing ID is required' });
+      return;
+    }
+    // For now, just remove from in-memory store
+    // If you have a DB, replace this with DB logic
+    // Assume removeListingById exists in listingStore
+    const { removeListingById } = await import('../storage/listingStore');
+    const deleted = removeListingById(id);
+    if (!deleted) {
+      res.status(404).json({ success: false, error: 'Listing not found' });
+      return;
+    }
+    res.status(200).json({ success: true, message: 'Listing deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to delete listing.'
+    });
+  }
+}

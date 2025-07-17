@@ -21,3 +21,15 @@ export function addListing(listing: Listing): void {
 export function getAllListings(): Listing[] {
   return [...listings]; // Return copy to prevent external mutation
 } 
+
+/**
+ * Remove a listing by ID from the in-memory store
+ */
+export function removeListingById(id: string): boolean {
+  const index = listings.findIndex(l => l.id === id);
+  if (index !== -1) {
+    listings.splice(index, 1);
+    return true;
+  }
+  return false;
+} 
