@@ -64,9 +64,9 @@ export class AnalyticsService {
       where: { userId },
       include: { analytics: true, property: true },
     });
-    const totalViews = userListings.reduce((sum, l) => sum + (l.analytics?.views || 0), 0);
-    const totalInquiries = userListings.reduce((sum, l) => sum + (l.analytics?.inquiries || 0), 0);
-    const totalFavorites = userListings.reduce((sum, l) => sum + (l.analytics?.favorited || 0), 0);
+    const totalViews = userListings.reduce((sum: number, l: any) => sum + (l.analytics?.views || 0), 0);
+    const totalInquiries = userListings.reduce((sum: number, l: any) => sum + (l.analytics?.inquiries || 0), 0);
+    const totalFavorites = userListings.reduce((sum: number, l: any) => sum + (l.analytics?.favorited || 0), 0);
     return {
       totalViews,
       totalInquiries,
@@ -85,13 +85,13 @@ export class AnalyticsService {
   async getDashboardSummary(userId: string) {
     const userProperties = await prisma.property.findMany({ where: { userId } });
     const activeProperties = userProperties.length;
-    const totalRent = userProperties.reduce((sum, p) => sum + p.rent, 0);
+    const totalRent = userProperties.reduce((sum: number, p: any) => sum + p.rent, 0);
     const averageRent = activeProperties > 0 ? totalRent / activeProperties : 0;
     const userListings = await prisma.listing.findMany({ where: { userId } });
     const activeListings = userListings.length;
     const listingIds = userListings.map(l => l.id);
     const analytics = await prisma.listingAnalytics.findMany({ where: { listingId: { in: listingIds } } });
-    const newInquiries = analytics.reduce((sum, a) => sum + a.inquiries, 0);
+    const newInquiries = analytics.reduce((sum: number, a: any) => sum + a.inquiries, 0);
     return {
       activeProperties,
       activeListings,

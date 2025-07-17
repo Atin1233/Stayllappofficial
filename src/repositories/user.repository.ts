@@ -81,7 +81,7 @@ export class UserRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return users.map(user => this.convertPrismaUserToUser(user));
+    return users.map((user: any) => this.convertPrismaUserToUser(user));
   }
 
   /**
@@ -169,7 +169,7 @@ export class UserRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return users.map(user => this.convertPrismaUserToUser(user));
+    return users.map((user: any) => this.convertPrismaUserToUser(user));
   }
 
   /**

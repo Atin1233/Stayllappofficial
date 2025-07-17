@@ -79,7 +79,7 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+    return properties.map((property: any) => this.convertPrismaPropertyToProperty(property));
   }
 
   /**
@@ -102,7 +102,7 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+    return properties.map((property: any) => this.convertPrismaPropertyToProperty(property));
   }
 
   /**
@@ -213,7 +213,7 @@ export class PropertyRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return properties.map(property => this.convertPrismaPropertyToProperty(property));
+    return properties.map((property: any) => this.convertPrismaPropertyToProperty(property));
   }
 
   /**

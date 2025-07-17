@@ -127,7 +127,7 @@ export class ListingRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return listings.map(listing => this.convertPrismaListingToListing(listing));
+    return listings.map((listing: any) => this.convertPrismaListingToListing(listing));
   }
 
   /**
@@ -163,7 +163,7 @@ export class ListingRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return listings.map(listing => this.convertPrismaListingToListing(listing));
+    return listings.map((listing: any) => this.convertPrismaListingToListing(listing));
   }
 
   /**
@@ -199,7 +199,7 @@ export class ListingRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return listings.map(listing => this.convertPrismaListingToListing(listing));
+    return listings.map((listing: any) => this.convertPrismaListingToListing(listing));
   }
 
   /**

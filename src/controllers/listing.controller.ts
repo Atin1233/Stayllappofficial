@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { PropertyValidator, PropertyCreate } from '../models/Property';
@@ -37,6 +36,7 @@ async function generateListingWithHuggingFace(prompt: string): Promise<string> {
 
     let lastError = null;
     for (const model of HF_MODELS) {
+      const { default: fetch } = await import('node-fetch');
       const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
         method: 'POST',
         headers: {
@@ -136,118 +136,4 @@ export async function generateListing(req: Request, res: Response): Promise<void
       return;
     }
     const prompt = createListingPrompt(property);
-    console.log(`DEBUG: Generated prompt for AI:`, prompt);
-    // Before AI call
-    console.log('DEBUG: Before generateListingWithVertexAI');
-    // Add timeout to AI call
-    let listingText: string;
-    try {
-      const result = await Promise.race([
-        generateListingWithVertexAI(prompt),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('VertexAI service timeout')), 15000))
-      ]);
-      if (typeof result === 'string') {
-        listingText = result;
-      } else {
-        throw new Error('AI service did not return a string');
-      }
-      console.log('DEBUG: After generateListingWithVertexAI');
-    } catch (aiError) {
-      const err = aiError instanceof Error ? aiError : new Error(String(aiError));
-      console.error('VertexAI service error or timeout:', err);
-      res.status(500).json({ success: false, error: err.message || 'VertexAI service failed.' });
-      return;
-    }
-    if (useDatabase) {
-      // Before DB listing creation
-      console.log('DEBUG: Before listingRepository.createListing');
-      try {
-        const newListing = await listingRepository.createListing({
-          listingText,
-          propertyId: propertyId || '',
-          userId: userId || '',
-        });
-        // After DB listing creation
-        console.log(`DEBUG: Listing created successfully with ID: ${newListing.id}`);
-        res.status(201).json({
-          success: true,
-          listing: newListing,
-        });
-      } catch (error: any) {
-        console.error('Database listing creation error:', error);
-        // If database creation fails, fall back to in-memory listing
-        console.log(`DEBUG: Database listing creation failed, falling back to in-memory listing`);
-        const inMemoryListing = createInMemoryListing(listingText, propertyId || '', userId || '');
-        res.status(201).json({
-          success: true,
-          listing: inMemoryListing,
-        });
-      }
-    } else {
-      // If we're using an in-memory property, create an in-memory listing
-      console.log(`DEBUG: Creating in-memory listing for property: ${propertyId}, user: ${userId}`);
-      const inMemoryListing = createInMemoryListing(listingText, propertyId || '', userId || '');
-      res.status(201).json({
-        success: true,
-        listing: inMemoryListing,
-      });
-    }
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Listing generation error:', errorMessage);
-    res.status(500).json({ success: false, error: errorMessage });
-  }
-}
-
-/**
- * Helper function to create an in-memory listing
- */
-function createInMemoryListing(listingText: string, propertyId: string, userId: string): Listing {
-  const listingId = `listing_${Date.now()}`;
-  // Ensure propertyId is a string
-  const safePropertyId = propertyId || '';
-  const property = getPropertyById(safePropertyId);
-  const { id, ...propertyWithoutId } = property || {};
-  const listing: Listing = {
-    id: listingId,
-    listingText,
-    propertyId: safePropertyId,
-    createdAt: new Date(),
-    propertyData: property ? { ...propertyWithoutId, isActive: true } : undefined
-  };
-  // Store the listing in memory
-  addListing(listing);
-  return listing;
-}
-
-/**
- * Express route handler for getting all listings
- */
-export async function getAllListings(req: Request, res: Response): Promise<void> {
-  try {
-    const listings = await listingRepository.getAllListings();
-    res.status(200).json({
-      success: true,
-      listings,
-      count: listings.length,
-    });
-  } catch (error: any) {
-    console.error('Get listings error:', error);
-    res.status(500).json({ success: false, error: 'Failed to retrieve listings.' });
-  }
-}
-
-export async function deleteListing(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
-  try {
-    const deletedListing = await listingRepository.delete(id || '');
-    if (deletedListing) {
-      res.status(200).json({ success: true, message: 'Listing deleted successfully.' });
-    } else {
-      res.status(404).json({ success: false, error: 'Listing not found.' });
-    }
-  } catch (error: any) {
-    console.error(`Delete listing error for ID ${id}:`, error);
-    res.status(500).json({ success: false, error: 'Failed to delete listing.' });
-  }
-} 
+    console.log(`
