@@ -3,7 +3,25 @@ import { Link } from 'react-router-dom';
 import { propertyAPI, listingAPI } from '../services/api';
 import { Toaster, toast } from 'react-hot-toast';
 import { saveAs } from 'file-saver';
-import { type Property as PropertyModel } from '../../../src/models/Property';
+// Define a minimal Property type for frontend use
+type Property = {
+  id: string;
+  title: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  numberOfBedrooms: number;
+  numberOfBathrooms: number;
+  rent: number;
+  description?: string;
+  amenities?: string[];
+  availabilityDate?: Date | string;
+  photos?: string[];
+  propertyType?: string;
+  petFriendly?: boolean;
+  utilitiesIncluded?: boolean;
+};
 import {
   PlusIcon,
   TrashIcon,
@@ -15,9 +33,6 @@ import {
   ArrowDownTrayIcon,
   HomeIcon
 } from '@heroicons/react/24/outline';
-
-// Combine the imported model with the ID since the ID comes from the store, not the model schema
-type Property = PropertyModel & { id: string };
 
 type EditFormState = Omit<Partial<Property>, 'amenities' | 'photos'> & {
   amenities: string; // Stored as a comma-separated string for the form
