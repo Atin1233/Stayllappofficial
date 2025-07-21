@@ -79,4 +79,34 @@ export const analyticsAPI = {
   getDashboardSummary: () => api.get('/analytics/summary')
 };
 
+// Tenant API
+export type Lease = {
+  id?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  rent?: number;
+  monthlyRent?: number;
+  property?: {
+    title?: string;
+  };
+  // Add more fields as needed
+};
+
+export type Tenant = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  leases?: Lease[];
+  // Add more fields as needed
+};
+
+export const createTenant = (tenantData: Partial<Tenant>) =>
+  api.post('/tenants', tenantData);
+
+export const getTenants = () =>
+  api.get<Tenant[]>('/tenants');
+
 export default api;

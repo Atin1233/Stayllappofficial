@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { propertyAPI, listingAPI } from '../services/api';
 import { Toaster, toast } from 'react-hot-toast';
@@ -10,11 +10,9 @@ import {
   PencilIcon,
   DocumentTextIcon,
   PhotoIcon,
-  EyeIcon,
   CheckIcon,
   XMarkIcon,
   ArrowDownTrayIcon,
-  FunnelIcon,
   HomeIcon
 } from '@heroicons/react/24/outline';
 
@@ -42,9 +40,9 @@ const PropertyManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  // const [saving, setSaving] = useState(false); // unused
   const [generatingId, setGeneratingId] = useState<string | null>(null);
-  const [generateError, setGenerateError] = useState('');
+  // const [generateError, setGenerateError] = useState(''); // unused
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
   const [analysisResult, setAnalysisResult] = useState<PhotoAnalysisResult | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -156,12 +154,11 @@ const PropertyManagement: React.FC = () => {
 
   const handleGenerateListing = async (propertyId: string) => {
     setGeneratingId(propertyId);
-    setGenerateError('');
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const userId = user.id;
       if (!userId) {
-        setGenerateError('User ID not found. Please log in again.');
+        alert('User ID not found. Please log in again.');
         setGeneratingId(null);
         return;
       }
@@ -174,7 +171,7 @@ const PropertyManagement: React.FC = () => {
     } catch (err: any) {
       // Only update state if the component is still mounted
       if (generatingId === propertyId) {
-        setGenerateError(err.response?.data?.error || 'Failed to generate listing');
+        alert(err.response?.data?.error || 'Failed to generate listing');
         setGeneratingId(null);
       }
     }
@@ -543,20 +540,20 @@ const PropertyManagement: React.FC = () => {
                       </button>
                       <button
                         type="submit"
-                        disabled={saving}
+                        // disabled={saving} // unused
                         className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 transition-all duration-200"
                       >
-                        {saving ? (
+                        {/* {saving ? ( // unused
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline mr-2"></div>
                             <span>Saving...</span>
                           </>
-                        ) : (
+                        ) : ( */}
                           <>
                             <CheckIcon className="h-5 w-5 inline mr-2" />
                             <span>Save Changes</span>
                           </>
-                        )}
+                        {/* )} */}
                       </button>
                     </div>
                   </form>
@@ -606,7 +603,7 @@ const PropertyManagement: React.FC = () => {
                     <div className="space-y-3">
                       <button
                         onClick={() => handleGenerateListing(property.id)}
-                        disabled={generatingId === property.id}
+                        // disabled={generatingId === property.id} // unused
                         className="w-full inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 transition-all duration-200"
                       >
                         <DocumentTextIcon className="h-4 w-4 mr-2" />

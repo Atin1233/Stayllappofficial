@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { analyticsAPI, propertyAPI, listingAPI } from '../services/api';
+import { propertyAPI, listingAPI } from '../services/api';
 import { 
   HomeIcon, 
   DocumentTextIcon, 
-  UserGroupIcon, 
   CurrencyDollarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -44,17 +43,15 @@ const Analytics: React.FC = () => {
         setError('');
         
         // Fetch data from multiple endpoints
-        const [propertiesResponse, listingsResponse, analyticsResponse] = await Promise.all([
+        const [propertiesResponse, listingsResponse] = await Promise.all([
           propertyAPI.getAll(),
-          listingAPI.getAll(),
-          analyticsAPI.getUserListingsAnalytics()
+          listingAPI.getAll()
         ]);
 
         // Calculate analytics from the actual data
         const properties = propertiesResponse.data.properties || [];
         const listings = listingsResponse.data.listings || [];
-        const analytics = analyticsResponse.data.analytics || {};
-
+        
         // Calculate property type distribution
         const propertyTypes = properties.reduce((acc: any, property: any) => {
           acc[property.propertyType] = (acc[property.propertyType] || 0) + 1;
@@ -343,7 +340,7 @@ const Analytics: React.FC = () => {
           <h2 className="text-xl lg:text-2xl font-semibold text-white mb-4 lg:mb-6">Revenue Overview</h2>
           <div className="h-64 flex items-end justify-between space-x-2">
             {analyticsData?.revenueByMonth && analyticsData.revenueByMonth.length > 0 ? (
-              analyticsData.revenueByMonth.slice(-6).map((month, index) => {
+              analyticsData.revenueByMonth.slice(-6).map((month) => {
                 const maxRevenue = Math.max(...analyticsData.revenueByMonth.map(m => m.revenue));
                 const height = (month.revenue / maxRevenue) * 100;
                 

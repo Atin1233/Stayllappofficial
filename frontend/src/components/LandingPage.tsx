@@ -1,35 +1,26 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-    CheckCircleIcon, 
-    ChevronDownIcon, 
-    PencilSquareIcon, 
-    ChatBubbleLeftRightIcon, 
-    UsersIcon as UsersSolidIcon 
-} from '@heroicons/react/24/solid';
-import { DocumentTextIcon, ChatBubbleOvalLeftEllipsisIcon, ShieldCheckIcon, DocumentIcon } from '@heroicons/react/24/outline';
-import { Badge } from "../../../src/components/ui/badge";
-import { Button } from "../../../src/components/ui/button";
-import { Input } from "../../../src/components/ui/input";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "../../../src/components/ui/sheet";
+} from "./ui/sheet";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "../../../src/components/ui/accordion";
+} from "./ui/accordion";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "../../../src/components/ui/avatar";
+} from "./ui/avatar";
 
 import {
   Card,
@@ -37,7 +28,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../src/components/ui/card";
+} from "./ui/card";
 
 import {
   MessageCircle,
@@ -50,44 +41,8 @@ import {
   Check,
 } from "lucide-react";
 
-const FeatureCard = ({ icon, title, description, color }: { icon: React.ElementType, title: string, description: string, color: string }) => {
-    const IconComponent = icon;
-    return (
-        <div className="text-center p-6">
-            <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${color}`}>
-                <IconComponent className="h-8 w-8 text-white" />
-            </div>
-            <h3 className="mt-6 text-lg font-semibold text-gray-900">{title}</h3>
-            <p className="mt-2 text-base text-gray-600">{description}</p>
-        </div>
-    );
-};
-
-const SolutionCard = ({ icon, title, items }: { icon: React.ElementType, title: string, items: string[] }) => {
-    const IconComponent = icon;
-    return (
-        <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-            <IconComponent className="h-8 w-8 text-blue-600 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{title}</h3>
-            <ul className="space-y-2">
-                {items.map((item, index) => (
-                    <li key={index} className="flex items-center text-gray-600">
-                        <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                        <span>{item}</span>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-};
-
 const LandingPage: React.FC = () => {
-    const navigate = useNavigate();
-
-    const handleEarlyAccess = (e: React.FormEvent) => {
-        e.preventDefault();
-        navigate('/register');
-    };
+    // const navigate = useNavigate(); // unused
 
     const cardProps = [
         {

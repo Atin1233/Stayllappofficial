@@ -31,7 +31,7 @@ const TenantManagement: React.FC = () => {
   };
 
   const getActiveLease = (leases: Tenant['leases']) => {
-    return leases.find(lease => lease.status === 'ACTIVE');
+    return leases?.find(lease => lease?.status === 'ACTIVE');
   };
 
   return (
@@ -81,7 +81,7 @@ const TenantManagement: React.FC = () => {
                 return (
                   <tr key={tenant.id} className="hover:bg-gray-700">
                     <td className="px-5 py-5 border-b border-gray-700 text-sm">
-                      <p className="text-white whitespace-no-wrap">{tenant.firstName} {tenant.lastName}</p>
+                      <p className="text-white whitespace-no-wrap">{tenant.firstName ?? ''} {tenant.lastName ?? ''}</p>
                     </td>
                     <td className="px-5 py-5 border-b border-gray-700 text-sm">
                       <p className="text-gray-300 whitespace-no-wrap">{tenant.email}</p>
@@ -90,9 +90,9 @@ const TenantManagement: React.FC = () => {
                     <td className="px-5 py-5 border-b border-gray-700 text-sm">
                       {activeLease ? (
                         <div>
-                          <p className="text-white whitespace-no-wrap">{activeLease.property.title}</p>
+                          <p className="text-white whitespace-no-wrap">{activeLease.property?.title ?? 'N/A'}</p>
                           <p className="text-gray-400 text-xs whitespace-no-wrap">
-                            {new Date(activeLease.startDate).toLocaleDateString()} - {new Date(activeLease.endDate).toLocaleDateString()}
+                            {activeLease.startDate ? new Date(activeLease.startDate).toLocaleDateString() : 'N/A'} - {activeLease.endDate ? new Date(activeLease.endDate).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                       ) : (
@@ -101,7 +101,7 @@ const TenantManagement: React.FC = () => {
                     </td>
                     <td className="px-5 py-5 border-b border-gray-700 text-sm">
                       <p className="text-white whitespace-no-wrap">
-                        {activeLease ? `$${activeLease.monthlyRent.toFixed(2)}` : 'N/A'}
+                        {activeLease && typeof activeLease.monthlyRent === 'number' ? `$${activeLease.monthlyRent.toFixed(2)}` : 'N/A'}
                       </p>
                     </td>
                     <td className="px-5 py-5 border-b border-gray-700 text-sm text-right">

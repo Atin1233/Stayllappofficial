@@ -4,7 +4,6 @@ import { analyticsAPI } from '../services/api';
 import { 
   HomeIcon, 
   DocumentTextIcon, 
-  UserGroupIcon, 
   CurrencyDollarIcon,
   PlusIcon,
   CogIcon,

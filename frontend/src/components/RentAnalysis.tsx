@@ -80,24 +80,6 @@ const RentAnalysis: React.FC<RentAnalysisProps> = ({ propertyData, propertyId, o
     }
   };
 
-  const getConfidenceColor = (confidence: string) => {
-    switch (confidence) {
-      case 'high': return 'text-green-600 bg-green-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'low': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getConfidenceIcon = (confidence: string) => {
-    switch (confidence) {
-      case 'high': return '✓';
-      case 'medium': return '⚠';
-      case 'low': return '?';
-      default: return '•';
-    }
-  };
-
   const chartData = {
     labels: ['Suggested Rent', 'Your Current Rent'],
     datasets: [
